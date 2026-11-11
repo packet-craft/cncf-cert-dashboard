@@ -2,7 +2,7 @@
   "use strict";
 
   var KEY = { done: "cncf-dash:v1:done", known: "cncf-dash:v1:known", ui: "cncf-dash:v1:ui" };
-  var VIEWS = [["overview", "Overview"], ["checklist", "Checklist"], ["cheats", "Cheat Sheet"], ["flashcards", "Flashcards"]];
+  var VIEWS = [["overview", "Overview"], ["checklist", "Checklist"], ["cheats", "Cheat Sheet"], ["flashcards", "Flashcards"], ["resources", "Resources"]];
   var PRIORITY_RANK = { high: 0, medium: 1, low: 2 };
 
   // ---------- storage (works even when localStorage is unavailable) ----------
@@ -88,6 +88,9 @@
       return '<button class="view-tab" type="button" data-view="' + v[0] + '"' +
         (v[0] === state.view ? ' aria-current="page"' : "") + ">" + v[1] + "</button>";
     }).join("");
+    // On narrow screens the tab row scrolls; keep the active tab visible.
+    var tabs = $("#viewTabs"), active = $('[aria-current="page"]', tabs);
+    if (active) tabs.scrollLeft = Math.max(0, active.offsetLeft - tabs.offsetLeft - (tabs.clientWidth - active.offsetWidth) / 2);
   }
 
   // ---------- overview ----------
@@ -283,6 +286,21 @@
       '<p class="fc-hint small muted"><kbd>Space</kbd> flip · <kbd>←</kbd> <kbd>→</kbd> navigate · <kbd>K</kbd> mark known</p></div>';
   }
 
+  // ---------- resources ----------
+  function renderResources(cert) {
+    return '<p class="muted">Free and open-source study material for ' + cert.name +
+      '. Links open external sites that this project does not maintain.</p>' +
+      DATA.resources[cert.key].map(function (g) {
+        return '<div class="section-head"><h2>' + esc(g.group) + '</h2></div><div class="grid resources">' +
+          g.items.map(function (r) {
+            var host = r[1].replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
+            return '<a class="card resource" href="' + esc(r[1]) + '" target="_blank" rel="noopener noreferrer">' +
+              '<h3>' + esc(r[0]) + '</h3><span class="small muted">' + esc(r[2]) + '</span>' +
+              '<span class="small host">' + esc(host) + ' ↗</span></a>';
+          }).join("") + '</div>';
+      }).join("");
+  }
+
   // ---------- render ----------
   function render() {
     var cert = DATA.certs[state.cert];
@@ -290,6 +308,7 @@
     var html = state.view === "overview" ? renderOverview(cert)
       : state.view === "checklist" ? renderChecklist(cert)
       : state.view === "cheats" ? renderCheats()
+      : state.view === "resources" ? renderResources(cert)
       : renderFlashcards(cert);
     $("#main").innerHTML = html;
     document.title = cert.name + " · " + VIEWS.filter(function (v) { return v[0] === state.view; })[0][1] + " — CNCF Exam Prep";

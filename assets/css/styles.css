@@ -262,6 +262,13 @@ select, input[type="search"] {
 .fc-hint { text-align: center; margin-top: 10px; }
 kbd { font: .8rem var(--mono); background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; }
 
+/* ---------- resources ---------- */
+.resources { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.resource { display: flex; flex-direction: column; gap: 8px; color: inherit; text-decoration: none; overflow-wrap: anywhere; }
+.resource:hover { border-color: var(--accent); }
+.resource h3 { color: var(--accent); }
+.resource .host { margin-top: auto; color: var(--muted); font-family: var(--mono); }
+
 /* ---------- misc ---------- */
 .footer { padding-top: 16px; padding-bottom: 32px; border-top: 1px solid var(--border); display: grid; gap: 8px; }
 .toast {
@@ -279,7 +286,7 @@ kbd { font: .8rem var(--mono); background: var(--surface-2); border: 1px solid v
   .item .tags { width: 100%; justify-content: flex-start; padding-left: 30px; }
   .topbar { position: static; }
   .view-tabs { gap: 0; }
-  .view-tab { padding: 10px 4px; font-size: .85rem; flex: 1 1 auto; }
+  .view-tab { padding: 10px 6px; font-size: .85rem; flex: 0 0 auto; }
 }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
