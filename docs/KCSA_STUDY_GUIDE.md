@@ -4,18 +4,20 @@
 online proctored, pass mark 75%. Conceptual, not hands-on, but questions assume you can read
 manifests and recognise security-relevant flags.
 
-> **The domains below are a study grouping, not the official outline.** The official outline
-> (<https://github.com/cncf/curriculum>) has six domains: Overview of Cloud Native Security 14%,
-> Kubernetes Cluster Component Security 22%, Kubernetes Security Fundamentals 22%, Kubernetes
-> Threat Model 16%, Platform Security 16%, and Compliance and Security Frameworks 10%.
+> Domains and weights follow the current official outline. Confirm at
+> <https://github.com/cncf/curriculum> before the exam.
 
-| Domain | Weight | Suggested weeks |
-|--------|-------:|-----------------|
-| Cloud Native Security Overview | 14% | 1 |
-| Kubernetes Cluster Protection | 22% | 1–3 |
-| Container Security | 20% | 3 |
-| Workload Security | 18% | 3–4 |
-| Security Operations & Compliance | 26% | 4 |
+| Domain | Weight | Covered in this guide | Suggested weeks |
+|--------|-------:|-----------------------|-----------------|
+| Overview of Cloud Native Security | 14% | §1 | 1 |
+| Kubernetes Cluster Component Security | 22% | §2, §6, §9 | 1–2 |
+| Kubernetes Security Fundamentals | 22% | §2 (authentication), §3, §4, §5, §6 (secrets), §7 | 2–3 |
+| Kubernetes Threat Model | 16% | §8 | 3–4 |
+| Platform Security | 16% | §6 (images), §9 | 4 |
+| Compliance and Security Frameworks | 10% | §7 (tooling), §8 | 4 |
+
+The sections below are organised by topic rather than by domain, because several topics (RBAC,
+admission, images) are examined from more than one angle.
 
 ## 1. Cloud native security standards and principles
 
@@ -239,14 +241,34 @@ rules:
 - **Incident response:** isolate the workload (NetworkPolicy, cordon the node), preserve evidence
   before deleting pods, rotate exposed credentials, review audit logs, fix the root cause.
 
+## 9. Platform, client and storage security
+
+- **Client security:** a kubeconfig can hold client certificates, keys or tokens. Restrict its file
+  permissions, prefer short-lived credentials (OIDC or exec plugins) over static tokens, and never
+  commit it. `kubectl create token` issues time-bound ServiceAccount tokens.
+- **Storage:** `hostPath` exposes the node filesystem and is forbidden by the Baseline profile.
+  Use `fsGroup` and read-only mounts to limit what a pod can do with a volume, and encrypt
+  persistent data at the storage layer.
+- **PKI:** the cluster CA signs the certificates that the API server, kubelets, etcd and clients
+  use to authenticate each other. Whoever holds the CA key can mint any identity. Rotate
+  certificates before expiry (`kubeadm certs check-expiration`).
+- **Service mesh:** mutual TLS between workloads gives encryption in transit and a verifiable
+  workload identity; authorization policies then say which identity may call which service.
+- **Connectivity:** terminate TLS at the ingress or gateway, expose as little as possible
+  (ClusterIP by default), and control egress — including the cloud metadata API at
+  `169.254.169.254`, which can hand node credentials to a compromised pod.
+- **Observability:** audit logs, runtime detection (Falco) and metrics feed alerting and a SIEM.
+- **Admission control** is the enforcement point for all of the above: Pod Security Admission,
+  `ValidatingAdmissionPolicy`, Kyverno or OPA Gatekeeper, and image-signature verification.
+
 ## Four-week plan
 
 | Week | Focus |
 |------|-------|
-| 1 | 4Cs, shared responsibility, principles; API request flow |
-| 2 | Authentication, RBAC, admission, etcd and kubelet hardening, NetworkPolicy, PKI |
-| 3 | Audit logging; container isolation, images, sandboxing; Pod Security Standards and `securityContext` |
-| 4 | Secrets, ServiceAccounts, policy engines; threat modelling, supply chain, compliance; practice questions |
+| 1 | Overview: 4Cs, shared responsibility, principles, isolation. API request flow. |
+| 2 | Component security: etcd, kubelet, runtime, pod settings, client and storage. Authentication and RBAC. |
+| 3 | Pod Security Standards and Admission, secrets, network policy, audit logging. Threat model: trust boundaries, persistence, DoS, network attackers. |
+| 4 | Privilege escalation and data access. Platform security: supply chain, admission, mesh, PKI. Compliance frameworks and tooling. Practice questions. |
 
 ## Study resources
 
