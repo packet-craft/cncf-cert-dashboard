@@ -1,6 +1,8 @@
-# CNCF Exam Prep Dashboard — KCNA · KCSA · CKA
+# CNCF Exam Prep — KCNA · KCSA · CKA
 
-A single-page, dependency-free study dashboard for three CNCF certifications:
+A single-page, dependency-free study platform for three CNCF certifications. It combines a
+domain-by-domain study guide with progress tracking, a readiness score, a command cheat sheet and
+flashcards, so everything needed to prepare is in one place:
 
 | Cert | Full name | Format | Pass mark |
 |------|-----------|--------|-----------|
@@ -13,6 +15,12 @@ A single-page, dependency-free study dashboard for three CNCF certifications:
 
 ## Features
 
+- **Study guide** — detailed documentation for every exam domain, organised into topics with
+  tables, diagrams, YAML examples, exam tips and self-test questions. Topics are searchable, can be
+  linked to directly (`#kcna/learn/fund/pods`) and show the checklist items they cover, so reading
+  and tracking happen in the same place. All three certifications are covered: KCNA (4 domains,
+  35 topics), KCSA (6 domains, 40 topics) and CKA (5 domains, 36 topics). The CKA guide is
+  command-oriented, with step-by-step procedures and worked troubleshooting examples.
 - **Domain trackers** — every exam domain with its weight, progress bar and points earned.
 - **Interactive checklists** — 126 study items, filterable by domain, priority, study week and free text. State is saved to `localStorage`.
 - **Exam readiness calculator** — a weighted score per certification, compared against the pass mark.
@@ -37,7 +45,8 @@ Finishing all items in a 30% domain earns 30 points; half of them earns 15. The 
 | Plain HTML + CSS + vanilla JS, no build step | Nothing to install, nothing to break; GitHub Pages serves the files as-is. |
 | No CDN or third-party requests | Works offline and from `file://`; no supply-chain exposure. |
 | Strict Content-Security-Policy | `default-src 'none'`, scripts and styles from the site only, no inline code. |
-| All content in one data file | Changing a weight or adding a topic never touches application code. |
+| Content separate from code | Weights, checklists and commands live in one data file and the study guide in `assets/js/docs/`; changing content never touches application code. |
+| Guide written in a Markdown subset | Easy to edit; rendered by a small built-in parser that escapes everything, so content cannot inject HTML. |
 | `localStorage` for state | No backend or account; progress stays in the user's browser. |
 
 ```
@@ -47,9 +56,10 @@ Finishing all items in a 30% domain earns 30 points; half of them earns 15. The 
 │   ├── css/styles.css          # Theme tokens (light/dark) and layout
 │   └── js/
 │       ├── theme.js            # Applies the saved theme before first paint
-│       ├── data.js             # ALL content: certs, domains, weights, items, commands, flashcards, resources
-│       └── app.js              # State, rendering, events
-├── scripts/validate-data.js    # Content sanity checks (weights sum to 100, etc.)
+│       ├── data.js             # Certs, domains, weights, checklist items, commands, flashcards, resources
+│       ├── docs/               # Study guide: one file per certification domain (kcna-fund.js, …)
+│       └── app.js              # State, routing, Markdown rendering, views, events
+├── scripts/validate-data.js    # Content sanity checks (weights, guide coverage, Markdown, etc.)
 ├── docs/                       # Study guides, resource lists and setup guide
 └── .github/workflows/deploy.yml
 ```
@@ -59,6 +69,20 @@ Finishing all items in a 30% domain earns 30 points; half of them earns 15. The 
 Everything lives in [`assets/js/data.js`](assets/js/data.js). Checklist items are
 `[title, priority, studyWeek]` tuples. Item ids are derived from their position, so **append new
 items to the end of a domain** — inserting in the middle shifts saved progress onto the wrong items.
+
+### Editing the study guide
+
+Each file in [`assets/js/docs/`](assets/js/docs/) holds one domain: an `intro` and a list of
+`topics`. A topic has a `key` (used in the URL), `title`, `summary`, `body`, `quiz` and `items` —
+the indexes of the checklist items it covers, which appear as tick boxes under the topic.
+
+`body` is an array of lines in a small Markdown subset: `##` and `###` headings, one paragraph per
+line, `-` and `1.` lists, `| tables |`, fenced code blocks, `>` callouts, and inline `` `code` ``,
+`**bold**`, `*italic*` and `[links](https://…)`. A `|` cannot be used inside a table cell.
+
+Files are named `<cert>-<domain key>.js`. To add a guide for another certification, create one
+file for each of its domains and add the `<script>` tags to `index.html`. The validator checks that every domain has
+a guide, that every checklist item is covered by a topic and that the Markdown is well formed.
 
 After editing, run:
 
@@ -78,14 +102,16 @@ python3 -m http.server 8000
 ## Deployment
 
 Every push to `main` runs [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml), which
-validates the content, assembles `index.html` + `assets/` and publishes them to GitHub Pages.
+validates the content (including the study guide), assembles `index.html` + `assets/` and publishes them to GitHub Pages.
 One-time repository setup is described in [docs/GITHUB_PAGES_SETUP.md](docs/GITHUB_PAGES_SETUP.md).
 
 ## Documentation
 
-- [KCNA study guide](docs/KCNA_STUDY_GUIDE.md)
-- [KCSA study guide](docs/KCSA_STUDY_GUIDE.md)
-- [CKA study guide](docs/CKA_STUDY_GUIDE.md)
+The full study guides are in the app (Study Guide tab). The Markdown files below are short summaries:
+
+- [KCNA summary](docs/KCNA_STUDY_GUIDE.md)
+- [KCSA summary](docs/KCSA_STUDY_GUIDE.md)
+- [CKA summary](docs/CKA_STUDY_GUIDE.md)
 - Free study resources: [KCNA](docs/KCNA_RESOURCES.md) · [KCSA](docs/KCSA_RESOURCES.md) · [CKA](docs/CKA_RESOURCES.md)
 - [GitHub Pages setup](docs/GITHUB_PAGES_SETUP.md)
 

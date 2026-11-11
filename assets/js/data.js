@@ -1,6 +1,7 @@
 /*
- * All dashboard content lives here. Edit this file to change domains, weights,
+ * Dashboard content lives here. Edit this file to change domains, weights,
  * checklist items, cheat-sheet commands or flashcards — no other code changes needed.
+ * The long-form study guide lives in assets/js/docs/.
  *
  * Checklist item tuple: [title, priority ("high" | "medium" | "low"), studyWeek]
  * Item ids are derived as `<cert>-<domain>-<index>`, so append new items at the
@@ -242,6 +243,9 @@ const DATA = {
       ]
     }
   },
+
+  /* Study guide content, filled in by assets/js/docs/<cert>-<domain>.js as docs[cert][domainKey]. */
+  docs: {},
 
   /* Cheat sheet: sections of [command, description]. `certs` drives the tag chips. */
   cheats: [
