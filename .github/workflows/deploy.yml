@@ -30,6 +30,7 @@ jobs:
           node scripts/validate-data.js
           node --check assets/js/app.js
           node --check assets/js/theme.js
+          for f in assets/js/docs/*.js; do node --check "$f"; done
 
       - name: Assemble site
         run: |
