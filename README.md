@@ -14,7 +14,7 @@ A single-page, dependency-free study dashboard for three CNCF certifications:
 ## Features
 
 - **Domain trackers** — every exam domain with its weight, progress bar and points earned.
-- **Interactive checklists** — 116 study items, filterable by domain, priority, study week and free text. State is saved to `localStorage`.
+- **Interactive checklists** — 126 study items, filterable by domain, priority, study week and free text. State is saved to `localStorage`.
 - **Exam readiness calculator** — a weighted score per certification, compared against the pass mark.
 - **CLI cheat sheet** — searchable, copy-to-clipboard commands for `kubectl`, `kubeadm`, `etcdctl`, `crictl` and security tooling (Trivy, kube-bench, kubescape, Cosign, Falco).
 - **Flashcards** — flip-animated cards for concepts, definitions and commands, with shuffle, "mark as known" and keyboard shortcuts (`Space`, `←`, `→`, `K`).
@@ -91,18 +91,19 @@ One-time repository setup is described in [docs/GITHUB_PAGES_SETUP.md](docs/GITH
 
 ## A note on domain weights
 
-- **CKA** matches the official curriculum (Storage 10, Troubleshooting 30, Workloads & Scheduling
-  15, Cluster Architecture 25, Services & Networking 20).
-- **KCNA** follows the project brief, which uses the pre-November-2025 outline. The current official
-  outline is Kubernetes Fundamentals 44%, Container Orchestration 28%, Cloud Native Application
-  Delivery 16%, Cloud Native Architecture 12%.
-- **KCSA** follows the project brief, which is a study grouping rather than the official outline:
-  Overview of Cloud Native Security 14%, Kubernetes Cluster Component Security 22%, Kubernetes
-  Security Fundamentals 22%, Kubernetes Threat Model 16%, Platform Security 16%, Compliance and
-  Security Frameworks 10%.
+Domains and weights match the official curricula at <https://github.com/cncf/curriculum> as checked
+in November 2026:
 
-The dashboard shows this note on the KCNA and KCSA overview pages. Always confirm against
-<https://github.com/cncf/curriculum> before booking an exam.
+| Cert | Domains |
+|------|---------|
+| KCNA | Kubernetes Fundamentals 44 · Container Orchestration 28 · Cloud Native Application Delivery 16 · Cloud Native Architecture 12 |
+| KCSA | Overview of Cloud Native Security 14 · Cluster Component Security 22 · Security Fundamentals 22 · Threat Model 16 · Platform Security 16 · Compliance and Security Frameworks 10 |
+| CKA | Cluster Architecture, Installation & Configuration 25 · Workloads & Scheduling 15 · Storage 10 · Services & Networking 20 · Troubleshooting 30 |
+
+This differs from the original project brief
+([`kcna_kcsa_cka_dashboard_agent_prompt.md`](kcna_kcsa_cka_dashboard_agent_prompt.md)), which used
+an older KCNA outline and a non-official KCSA grouping. CNCF revises its curricula periodically, so
+confirm before booking an exam and adjust `assets/js/data.js` if needed.
 
 This project is an independent study aid and is not affiliated with or endorsed by the CNCF or
 The Linux Foundation.

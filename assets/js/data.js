@@ -10,7 +10,6 @@ const DATA = {
   certs: {
     kcna: {
       name: "KCNA",
-      curriculumNote: "The domains here follow the pre-November-2025 outline. The current official outline is: Kubernetes Fundamentals 44%, Container Orchestration 28%, Cloud Native Application Delivery 16%, Cloud Native Architecture 12% (observability now sits inside Architecture).",
       title: "Kubernetes and Cloud Native Associate",
       format: "Multiple choice · 60 questions",
       duration: "90 minutes",
@@ -18,7 +17,7 @@ const DATA = {
       weeks: 4,
       domains: [
         {
-          key: "kf", name: "Kubernetes Fundamentals", weight: 46,
+          key: "fund", name: "Kubernetes Fundamentals", weight: 44,
           items: [
             ["Explain the control plane: kube-apiserver, etcd, scheduler, controller-manager", "high", 1],
             ["Explain node components: kubelet, kube-proxy, container runtime", "high", 1],
@@ -27,55 +26,60 @@ const DATA = {
             ["kubectl basics: get, describe, logs, apply, explain", "high", 1],
             ["Declarative vs imperative management and the reconciliation loop", "medium", 1],
             ["Namespaces, labels, selectors and annotations", "medium", 1],
-            ["Service types: ClusterIP, NodePort, LoadBalancer, ExternalName, headless", "high", 2],
-            ["ConfigMaps and Secrets: creation and consumption (env, volume)", "medium", 2],
-            ["Scheduling basics: requests/limits, taints & tolerations, affinity", "medium", 2],
-            ["RBAC basics: Role, ClusterRole, bindings, ServiceAccounts", "medium", 2],
-            ["Kubernetes API: groups, versions, resources, CRDs", "low", 2]
-          ]
-        },
-        {
-          key: "co", name: "Container Orchestration", weight: 22,
-          items: [
-            ["Container fundamentals: Linux namespaces, cgroups, image vs container", "high", 2],
+            ["Containerization: Linux namespaces, cgroups, image vs container", "high", 1],
             ["OCI specs (image, runtime, distribution) and runtimes: containerd, CRI-O, runc", "medium", 2],
-            ["Kubernetes interfaces: CRI, CNI, CSI", "high", 2],
             ["Build, tag and push a container image to a registry", "low", 2],
-            ["Networking model: pod-to-pod, Services, Ingress, CoreDNS, NetworkPolicy", "high", 3],
-            ["Service mesh concepts: data plane, control plane, sidecar proxies, mTLS", "medium", 3],
-            ["Storage: volumes, PersistentVolume, PersistentVolumeClaim, StorageClass", "medium", 3],
-            ["Container security basics: image scanning, least privilege, the 4Cs", "medium", 3]
+            ["Kubernetes interfaces: CRI, CNI, CSI", "high", 2],
+            ["Kubernetes API: groups, versions, resources, CRDs", "low", 2],
+            ["Administration: RBAC basics — Role, ClusterRole, bindings, ServiceAccounts", "medium", 2],
+            ["Administration: ConfigMaps and Secrets — creation and consumption (env, volume)", "medium", 2],
+            ["Administration: ResourceQuota, LimitRange, cordon and drain, cluster upgrades (concepts)", "medium", 2],
+            ["Scheduling: requests/limits, nodeSelector, affinity, taints & tolerations", "high", 2]
           ]
         },
         {
-          key: "ca", name: "Cloud Native Architecture", weight: 16,
+          key: "orch", name: "Container Orchestration", weight: 28,
+          items: [
+            ["Networking model: pod-to-pod communication, Services, CoreDNS", "high", 3],
+            ["Service types: ClusterIP, NodePort, LoadBalancer, ExternalName, headless", "high", 3],
+            ["Ingress and Gateway API: routing HTTP traffic into the cluster", "medium", 3],
+            ["NetworkPolicy: default allow, selecting pods, ingress and egress rules", "medium", 3],
+            ["Service mesh concepts: data plane, control plane, sidecar proxies, mTLS", "medium", 3],
+            ["Security: the 4Cs, image scanning, least privilege", "medium", 3],
+            ["Security: securityContext, Pod Security Standards, ServiceAccount tokens", "medium", 3],
+            ["Storage: volumes, PersistentVolume, PersistentVolumeClaim, StorageClass", "high", 3],
+            ["Storage: access modes, reclaim policies, ephemeral volumes (emptyDir, configMap, secret)", "low", 3],
+            ["Troubleshooting: pod states — Pending, CrashLoopBackOff, ImagePullBackOff, OOMKilled", "high", 3],
+            ["Troubleshooting: kubectl describe, events and logs to find a root cause", "high", 3]
+          ]
+        },
+        {
+          key: "deliv", name: "Cloud Native Application Delivery", weight: 16,
+          items: [
+            ["GitOps principles, push vs pull; Argo CD and Flux", "high", 4],
+            ["CI/CD concepts: pipelines, stages, artifacts", "medium", 4],
+            ["Packaging and templating: Helm and Kustomize", "high", 4],
+            ["Deployment strategies: rolling, recreate, blue/green, canary", "high", 4],
+            ["Rollouts and rollbacks: kubectl rollout status / history / undo", "medium", 4],
+            ["Infrastructure as Code concepts", "low", 4],
+            ["Debugging: liveness, readiness and startup probes", "medium", 4],
+            ["Debugging: kubectl logs --previous, exec, debug and ephemeral containers", "medium", 4]
+          ]
+        },
+        {
+          key: "arch", name: "Cloud Native Architecture", weight: 12,
           items: [
             ["Cloud native characteristics; microservices vs monoliths", "high", 3],
             ["Autoscaling: HPA, VPA, Cluster Autoscaler, KEDA", "high", 3],
             ["Serverless and FaaS: Knative, CloudEvents", "medium", 3],
-            ["CNCF governance: Sandbox / Incubating / Graduated, TOC, TAGs and SIGs", "medium", 3],
             ["Open standards: OCI, CRI, CNI, CSI, OpenTelemetry", "medium", 3],
+            ["Observability: the three pillars — logs, metrics, traces", "high", 4],
+            ["Observability: Prometheus — pull model, exporters, PromQL basics, Alertmanager", "high", 4],
+            ["Observability: tracing with OpenTelemetry and Jaeger; logging with Fluentd / Fluent Bit", "medium", 4],
+            ["SLI / SLO / SLA and cost management (FinOps, OpenCost)", "low", 4],
+            ["Community: CNCF project maturity (Sandbox / Incubating / Graduated), TOC, TAGs", "medium", 4],
+            ["Community: Kubernetes SIGs, KEPs and how contributions work", "low", 4],
             ["Roles and personas: SRE, DevOps, platform, security, cloud architect", "low", 4]
-          ]
-        },
-        {
-          key: "ob", name: "Observability", weight: 8,
-          items: [
-            ["The three pillars: logs, metrics, traces", "high", 4],
-            ["Prometheus: pull model, exporters, PromQL basics, Alertmanager", "high", 4],
-            ["Distributed tracing: OpenTelemetry and Jaeger", "medium", 4],
-            ["Logging architectures: node-level agent vs sidecar; Fluentd / Fluent Bit", "medium", 4],
-            ["SLI / SLO / SLA and cost management (FinOps, OpenCost)", "low", 4]
-          ]
-        },
-        {
-          key: "ad", name: "Application Delivery", weight: 8,
-          items: [
-            ["GitOps principles, push vs pull; Argo CD and Flux", "high", 4],
-            ["CI/CD concepts: pipelines, stages, artifacts", "medium", 4],
-            ["Packaging and templating: Helm and Kustomize", "medium", 4],
-            ["Deployment strategies: rolling, blue/green, canary", "medium", 4],
-            ["Infrastructure as Code concepts", "low", 4]
           ]
         }
       ]
@@ -83,7 +87,6 @@ const DATA = {
 
     kcsa: {
       name: "KCSA",
-      curriculumNote: "The domains here are a study grouping, not the official outline, which is: Overview of Cloud Native Security 14%, Kubernetes Cluster Component Security 22%, Kubernetes Security Fundamentals 22%, Kubernetes Threat Model 16%, Platform Security 16%, Compliance and Security Frameworks 10%.",
       title: "Kubernetes and Cloud Native Security Associate",
       format: "Multiple choice · 60 questions",
       duration: "90 minutes",
@@ -91,69 +94,74 @@ const DATA = {
       weeks: 4,
       domains: [
         {
-          key: "ov", name: "Cloud Native Security Overview", weight: 14,
+          key: "overview", name: "Overview of Cloud Native Security", weight: 14,
           items: [
             ["The 4Cs of cloud native security: Cloud, Cluster, Container, Code", "high", 1],
-            ["Shared responsibility model and cloud provider security", "high", 1],
-            ["Principles: defense in depth, least privilege, zero trust", "medium", 1],
+            ["Cloud provider and infrastructure security; the shared responsibility model", "high", 1],
+            ["Controls and frameworks: defense in depth, least privilege, zero trust", "medium", 1],
             ["Isolation techniques: namespaces, network, node, sandboxed runtimes", "medium", 1],
             ["Artifact repository and image security overview", "medium", 1],
             ["Workload and application code security overview", "medium", 1]
           ]
         },
         {
-          key: "cp", name: "Kubernetes Cluster Protection", weight: 22,
+          key: "components", name: "Kubernetes Cluster Component Security", weight: 22,
           items: [
-            ["API request flow: authentication → authorization → admission control", "high", 1],
-            ["Authentication methods: X.509 client certs, ServiceAccount tokens, OIDC", "high", 2],
-            ["RBAC in depth, incl. risky verbs: escalate, bind, impersonate, wildcard", "high", 2],
-            ["Admission control: mutating/validating webhooks, ValidatingAdmissionPolicy", "high", 2],
-            ["etcd security: TLS, encryption at rest, restricted access", "high", 2],
-            ["NetworkPolicy: default deny, ingress and egress rules", "high", 2],
-            ["kubelet hardening: anonymous-auth=false, Webhook authz, no read-only port", "medium", 2],
-            ["Hardening scheduler, controller-manager and kube-proxy", "medium", 2],
-            ["PKI and certificate management in a kubeadm cluster", "medium", 2],
+            ["API server: request flow (authn → authz → admission) and hardening flags", "high", 1],
+            ["etcd: TLS, encryption at rest, restricted access", "high", 2],
+            ["kubelet: anonymous-auth=false, Webhook authorization, no read-only port", "high", 2],
+            ["Pod: securityContext — runAsNonRoot, readOnlyRootFilesystem, allowPrivilegeEscalation, capabilities", "high", 2],
+            ["Controller manager and scheduler hardening", "medium", 2],
+            ["Container runtime: namespaces, cgroups, seccomp, AppArmor/SELinux; gVisor, Kata, RuntimeClass", "medium", 2],
+            ["kube-proxy and container networking: CNI plugins, encryption in transit", "medium", 2],
+            ["Client security: kubeconfig files, credential handling, short-lived tokens", "medium", 2],
+            ["Storage: hostPath risks, volume permissions, encrypting persistent data", "low", 2]
+          ]
+        },
+        {
+          key: "fundamentals", name: "Kubernetes Security Fundamentals", weight: 22,
+          items: [
+            ["Authentication: X.509 client certs, ServiceAccount tokens, OIDC", "high", 2],
+            ["Authorization: RBAC in depth, incl. risky verbs — escalate, bind, impersonate, wildcard", "high", 2],
+            ["Pod Security Standards: Privileged, Baseline, Restricted", "high", 3],
+            ["Pod Security Admission: enforce / audit / warn namespace labels", "high", 3],
+            ["Secrets: encryption at rest, external stores, volume vs env, RBAC on secrets", "high", 3],
+            ["Network Policy: default deny, ingress and egress rules", "high", 3],
+            ["Isolation and segmentation: namespaces, ResourceQuota, LimitRange, multi-tenancy", "medium", 3],
             ["Audit logging: policy levels (None/Metadata/Request/RequestResponse) and stages", "medium", 3]
           ]
         },
         {
-          key: "cs", name: "Container Security", weight: 20,
+          key: "threat", name: "Kubernetes Threat Model", weight: 16,
           items: [
-            ["Linux isolation primitives: namespaces, cgroups, capabilities", "high", 3],
-            ["Kernel security: seccomp, AppArmor, SELinux", "high", 3],
-            ["Image hardening: minimal/distroless base, non-root user, multi-stage builds", "high", 3],
-            ["Image scanning (Trivy, Grype) and SBOMs", "medium", 3],
-            ["Image signing and verification: Sigstore Cosign, Notary", "medium", 3],
-            ["Sandboxed runtimes: gVisor, Kata Containers, RuntimeClass", "medium", 3],
-            ["Registry security: private registries, imagePullSecrets, digest pinning", "low", 3]
+            ["Trust boundaries and data flow in a cluster; applying STRIDE", "high", 3],
+            ["Persistence: backdoor workloads, static pods, rogue RBAC bindings, CronJobs", "medium", 3],
+            ["Denial of service: resource exhaustion, missing limits and quotas, API flooding", "medium", 3],
+            ["Malicious code execution and compromised applications in containers", "medium", 3],
+            ["Attacker on the network: unencrypted traffic, flat networks, lateral movement", "medium", 3],
+            ["Access to sensitive data: Secrets, etcd, ServiceAccount tokens, cloud metadata API", "medium", 4],
+            ["Privilege escalation: privileged pods, hostPath, host namespaces, RBAC abuse", "high", 4]
           ]
         },
         {
-          key: "ws", name: "Workload Security", weight: 18,
+          key: "platform", name: "Platform Security", weight: 16,
           items: [
-            ["Pod Security Standards: Privileged, Baseline, Restricted", "high", 3],
-            ["Pod Security Admission: enforce / audit / warn namespace labels", "high", 3],
-            ["securityContext: runAsNonRoot, readOnlyRootFilesystem, allowPrivilegeEscalation, drop capabilities", "high", 3],
-            ["Secrets management: encryption at rest, external stores, volume vs env", "medium", 4],
-            ["ServiceAccount hardening: automountServiceAccountToken, bound tokens", "medium", 4],
-            ["ResourceQuota and LimitRange as denial-of-service controls", "medium", 4],
-            ["Policy engines: OPA Gatekeeper, Kyverno", "medium", 4],
-            ["Multi-tenancy and namespace isolation", "low", 4]
+            ["Supply chain security: SBOMs, image signing (Cosign), provenance", "high", 4],
+            ["Image repository: scanning (Trivy, Grype), private registries, digest pinning", "medium", 4],
+            ["Admission control: webhooks, ValidatingAdmissionPolicy, Kyverno, OPA Gatekeeper", "high", 4],
+            ["Observability: runtime detection with Falco, security-relevant logs and metrics", "medium", 4],
+            ["Service mesh: mutual TLS, workload identity, authorization policies", "medium", 4],
+            ["PKI: the cluster CA, component certificates, rotation and expiry", "medium", 4],
+            ["Connectivity: ingress TLS termination, egress control, exposing services safely", "low", 4]
           ]
         },
         {
-          key: "so", name: "Security Operations & Compliance", weight: 26,
+          key: "compliance", name: "Compliance and Security Frameworks", weight: 10,
           items: [
-            ["Threat modelling with STRIDE; trust boundaries and data flows", "high", 4],
-            ["MITRE ATT&CK for Containers and the Kubernetes threat matrix", "high", 4],
-            ["Attack scenarios: persistence, privilege escalation, lateral movement, DoS", "high", 4],
-            ["CIS Kubernetes Benchmark and kube-bench", "high", 4],
-            ["Compliance frameworks: NIST SP 800-190, NIST CSF, PCI DSS, SOC 2, GDPR", "medium", 4],
-            ["Supply chain security: SLSA levels, SBOM, in-toto attestations", "medium", 4],
-            ["Runtime threat detection with Falco", "medium", 4],
-            ["Security observability: audit logs, alerting, SIEM integration", "medium", 4],
-            ["Incident response: isolate, collect evidence, rotate credentials", "low", 4],
-            ["Automation and tooling: kubescape, kube-hunter, Trivy Operator", "low", 4]
+            ["Compliance frameworks: CIS Benchmarks, NIST SP 800-190, NIST CSF, PCI DSS, SOC 2, GDPR", "medium", 4],
+            ["Threat modelling frameworks: STRIDE, MITRE ATT&CK for Containers", "high", 4],
+            ["Supply chain compliance: SLSA levels, in-toto attestations", "medium", 4],
+            ["Automation and tooling: kube-bench, kubescape, Trivy Operator, policy as code", "high", 4]
           ]
         }
       ]
@@ -472,6 +480,11 @@ const DATA = {
     { cert: "kcna", type: "definition", q: "What does the OCI standardise?", a: "The Open Container Initiative defines the image spec, the runtime spec (implemented by runc) and the distribution spec (registries)." },
     { cert: "kcna", type: "concept", q: "What problem does a service mesh solve?", a: "It moves service-to-service concerns — mTLS, retries, traffic shifting, telemetry — out of app code into proxies managed by a control plane." },
 
+    { cert: "kcna", type: "concept", q: "What does CrashLoopBackOff mean?", a: "The container starts, exits, and the kubelet keeps restarting it with a growing delay. Check kubectl logs --previous and the exit code in kubectl describe pod." },
+    { cert: "kcna", type: "concept", q: "Liveness vs readiness vs startup probe?", a: "Liveness: restart the container if it fails. Readiness: remove the pod from Service endpoints while it fails. Startup: hold off the other two until a slow app has started." },
+    { cert: "kcna", type: "command", q: "Debug a running pod whose image has no shell.", a: "kubectl debug -it <pod> --image=busybox --target=<container>   (adds an ephemeral container)" },
+    { cert: "kcna", type: "concept", q: "Helm vs Kustomize?", a: "Helm packages templated manifests as versioned charts and tracks releases. Kustomize patches plain YAML with overlays, no templates, and is built into kubectl (-k)." },
+
     // KCSA
     { cert: "kcsa", type: "definition", q: "What are the 4Cs of cloud native security?", a: "Cloud, Cluster, Container, Code. Each layer builds on the security of the layer outside it." },
     { cert: "kcsa", type: "concept", q: "In what order does the API server process a request?", a: "Authentication → Authorization (e.g. RBAC) → Mutating admission → Schema validation → Validating admission → persisted to etcd." },
@@ -488,6 +501,12 @@ const DATA = {
     { cert: "kcsa", type: "command", q: "Check whether a ServiceAccount can read secrets.", a: "kubectl auth can-i get secrets --as=system:serviceaccount:<ns>:<sa> -n <ns>" },
     { cert: "kcsa", type: "concept", q: "What does Falco do?", a: "Runtime threat detection: it watches syscalls (via eBPF) and Kubernetes audit events and alerts when rules match, e.g. a shell spawned in a container." },
     { cert: "kcsa", type: "concept", q: "Name three kubelet hardening settings.", a: "--anonymous-auth=false, --authorization-mode=Webhook, and the read-only port (10255) disabled." },
+
+    { cert: "kcsa", type: "concept", q: "What does a service mesh add for security?", a: "Mutual TLS between workloads (encryption plus workload identity) and authorization policies, without changing application code." },
+    { cert: "kcsa", type: "concept", q: "Why is a kubeconfig file sensitive?", a: "It can hold client certificates, keys or tokens that grant cluster access. Protect its file permissions, prefer short-lived or exec-plugin credentials, and never commit it." },
+    { cert: "kcsa", type: "concept", q: "Why is hostPath dangerous?", a: "It mounts the node's filesystem into the pod. Writable or broad mounts (/, /var/run, the runtime socket) let a container escape to the node. Baseline Pod Security forbids it." },
+    { cert: "kcsa", type: "concept", q: "How can a pod reach cloud credentials it was never given?", a: "Through the cloud instance metadata API (169.254.169.254) on the node. Block it with NetworkPolicy egress rules or use workload identity." },
+    { cert: "kcsa", type: "definition", q: "What is the cluster CA used for?", a: "It signs the certificates components use to authenticate each other (API server, kubelets, etcd, clients). Anyone holding its key can mint an identity, including cluster-admin." },
 
     // CKA
     { cert: "cka", type: "command", q: "Generate a Deployment manifest without creating it.", a: "kubectl create deployment web --image=nginx --replicas=3 --dry-run=client -o yaml > web.yaml" },
