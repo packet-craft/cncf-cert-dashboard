@@ -40,6 +40,17 @@ for (const f of DATA.flashcards) {
   seen.add(id);
 }
 
+for (const key of Object.keys(DATA.certs)) {
+  const groups = DATA.resources[key];
+  if (!groups || !groups.length) { errors.push(`resources: none for "${key}"`); continue; }
+  for (const g of groups) {
+    for (const r of g.items) {
+      if (r.length !== 3 || !r[0] || !r[2]) errors.push(`resources ${key}/"${g.group}": malformed entry`);
+      else if (!/^https:\/\//.test(r[1])) errors.push(`resources ${key}/"${r[0]}": URL must be https`);
+    }
+  }
+}
+
 if (errors.length) {
   console.error(errors.join("\n"));
   process.exit(1);

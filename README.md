@@ -18,6 +18,7 @@ A single-page, dependency-free study dashboard for three CNCF certifications:
 - **Exam readiness calculator** — a weighted score per certification, compared against the pass mark.
 - **CLI cheat sheet** — searchable, copy-to-clipboard commands for `kubectl`, `kubeadm`, `etcdctl`, `crictl` and security tooling (Trivy, kube-bench, kubescape, Cosign, Falco).
 - **Flashcards** — flip-animated cards for concepts, definitions and commands, with shuffle, "mark as known" and keyboard shortcuts (`Space`, `←`, `→`, `K`).
+- **Resources** — curated free and open-source courses, repositories, labs and references for each certification.
 - Light and dark themes, mobile layout, progress export/import as JSON.
 
 ### How readiness is calculated
@@ -44,10 +45,10 @@ Finishing all items in a 30% domain earns 30 points; half of them earns 15. The 
 ├── assets/
 │   ├── css/styles.css          # Theme tokens (light/dark) and layout
 │   └── js/
-│       ├── data.js             # ALL content: certs, domains, weights, items, commands, flashcards
+│       ├── data.js             # ALL content: certs, domains, weights, items, commands, flashcards, resources
 │       └── app.js              # State, rendering, events
 ├── scripts/validate-data.js    # Content sanity checks (weights sum to 100, etc.)
-├── docs/                       # Study guides and setup guide
+├── docs/                       # Study guides, resource lists and setup guide
 └── .github/workflows/deploy.yml
 ```
 
@@ -83,6 +84,7 @@ One-time repository setup is described in [docs/GITHUB_PAGES_SETUP.md](docs/GITH
 - [KCNA study guide](docs/KCNA_STUDY_GUIDE.md)
 - [KCSA study guide](docs/KCSA_STUDY_GUIDE.md)
 - [CKA study guide](docs/CKA_STUDY_GUIDE.md)
+- Free study resources: [KCNA](docs/KCNA_RESOURCES.md) · [KCSA](docs/KCSA_RESOURCES.md) · [CKA](docs/CKA_RESOURCES.md)
 - [GitHub Pages setup](docs/GITHUB_PAGES_SETUP.md)
 
 ## A note on domain weights

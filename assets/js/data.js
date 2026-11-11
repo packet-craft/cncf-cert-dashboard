@@ -384,6 +384,49 @@ const DATA = {
     }
   ],
 
+  /* Free study resources per cert: groups of [title, url, description]. */
+  resources: {
+    kcna: [
+      { group: "Open-source repositories & guides", items: [
+        ["msahihi/KCNA-study-guide", "https://github.com/msahihi/KCNA-study-guide", "Theory notes mapped to the exam domains, YAML labs, a quick-reference cheatsheet and practice questions."],
+        ["Wriju's KCNA Exam Prep Guide", "https://wrijugh.github.io/kcna/", "Topic-by-topic map from each exam domain to the relevant CNCF, Kubernetes and OpenTelemetry docs."],
+        ["CNCF Cloud Native Glossary", "https://glossary.cncf.io/", "Community-maintained definitions of cloud native terms — useful for exam terminology."]
+      ] },
+      { group: "Free courses & video", items: [
+        ["freeCodeCamp KCNA full course (YouTube)", "https://www.youtube.com/watch?v=AplluksKvzI", "14-hour video course: containers, Kubernetes architecture, observability, delivery and the CNCF landscape."],
+        ["Linux Foundation — Introduction to Kubernetes (LFS158x)", "https://www.edx.org/learn/kubernetes/the-linux-foundation-introduction-to-kubernetes", "Official course on edX, free on the audit track."]
+      ] },
+      { group: "Interactive references", items: [
+        ["CNCF Interactive Landscape", "https://landscape.cncf.io/", "Browse projects by category and maturity level (Graduated, Incubating, Sandbox)."]
+      ] }
+    ],
+    kcsa: [
+      { group: "Open-source repositories & security notes", items: [
+        ["iamaliyousefi/kcsa", "https://github.com/iamaliyousefi/kcsa", "Curated sources on compliance frameworks (CIS, NIST, NSA/CISA), Pod Security Standards and container security."],
+        ["InfraSec KCSA Study Guide", "https://infrasec.sh/post/cncf-kcsa/", "Domain-by-domain notes with the OWASP Kubernetes Top 10, STRIDE and ATT&CK threat modelling, and scanner tools."]
+      ] },
+      { group: "Standards & threat frameworks", items: [
+        ["NSA/CISA Kubernetes Hardening Guidance", "https://www.nsa.gov/Press-Room/News-Highlights/Article/Article/2719161/nsa-cisa-release-kubernetes-hardening-guidance/", "Official hardening report that the security curriculum draws on heavily."],
+        ["OWASP Kubernetes Security Testing Guide", "https://owasp.org/www-project-kubernetes-security-testing-guide/", "Threat models, common misconfigurations and cluster attack paths."]
+      ] }
+    ],
+    cka: [
+      { group: "Hands-on labs & repositories", items: [
+        ["codewithmuh/cka-course", "https://github.com/codewithmuh/cka-course", "Free course: 7 modules, 44 hands-on lessons, a local kind lab and 3 timed mock exams."],
+        ["walidshaari/Kubernetes-Certified-Administrator", "https://github.com/walidshaari/Kubernetes-Certified-Administrator", "Community list of resources per curriculum topic. Written for an older curriculum, so check dates."],
+        ["alijahnas/CKA-practice-exercises", "https://github.com/alijahnas/CKA-practice-exercises", "Practice exercises organised by exam domain."]
+      ] },
+      { group: "Free practice environments", items: [
+        ["Play with Kubernetes", "https://labs.play-with-k8s.com/", "Browser-based multi-node lab for practising kubeadm init / join and node maintenance."],
+        ["killer.sh CKA Simulator", "https://killer.sh/", "Exam simulator; two sessions are included when you register for the CKA exam."]
+      ] },
+      { group: "Official docs (allowed in the exam)", items: [
+        ["Kubernetes documentation", "https://kubernetes.io/docs/", "Practise searching and navigating it quickly."],
+        ["kubectl quick reference", "https://kubernetes.io/docs/reference/kubectl/cheatsheet/", "Imperative command syntax worth knowing by heart."]
+      ] }
+    ]
+  },
+
   /* Flashcards: { cert, type: "concept" | "definition" | "command", q, a } */
   flashcards: [
     // KCNA
