@@ -1,8 +1,9 @@
 # CKA Study Guide
 
 **Certified Kubernetes Administrator** — performance-based, 2 hours, online proctored, pass mark
-66%. You solve tasks in a real terminal across several clusters. The official Kubernetes
-documentation is allowed in one browser tab. Speed matters as much as knowledge.
+66%. You solve 15–20 tasks in a real terminal, each on a host you `ssh` to. Inside the exam
+browser you may use kubernetes.io/docs, kubernetes.io/blog, helm.sh/docs and
+gateway-api.sigs.k8s.io. Speed matters as much as knowledge.
 
 | Domain | Weight | Suggested weeks |
 |--------|-------:|-----------------|
@@ -16,12 +17,15 @@ Confirm the current outline and Kubernetes version at <https://github.com/cncf/c
 
 ## Exam-day rules of thumb
 
-1. **Switch context first.** Every task names a cluster; run the given `kubectl config use-context`
-   (or `ssh`) command before anything else.
+1. **Connect to the right host first.** Every task names a host; run the given `ssh` command
+   before anything else, and `exit` back to the base host when the task is done. (Older exam
+   versions and some practice environments use `kubectl config use-context` instead.) Use
+   `sudo -i` on the host when you need root.
 2. **Generate, don't type.** Use `--dry-run=client -o yaml` and edit the result.
 3. **Skip and flag** anything that takes more than ~6 minutes; come back at the end.
 4. **Verify every task** — `kubectl get`, `describe`, or a `curl` from a test pod.
-5. After `ssh` to a node, remember to `exit` before the next task.
+5. Read the official instructions before exam day:
+   <https://docs.linuxfoundation.org/tc-docs/certification/tips-cka-and-ckad>.
 
 ## `kubectl` imperative speed cheatsheet
 
@@ -29,7 +33,7 @@ Confirm the current outline and Kubernetes version at <https://github.com/cncf/c
 # Setup (the alias and completion are usually already present)
 alias k=kubectl
 export do='--dry-run=client -o yaml'
-export now='--force --grace-period=0'
+export now='--force --grace-period=0'     # skips graceful shutdown — practice clusters only
 
 # Pods
 k run web --image=nginx --port=80 --labels=app=web $do > pod.yaml
@@ -40,7 +44,7 @@ k create deployment web --image=nginx --replicas=3 $do > deploy.yaml
 k set image deployment/web nginx=nginx:1.27
 k rollout status|history|undo deployment/web
 k scale deployment web --replicas=5
-k autoscale deployment web --min=2 --max=5 --cpu-percent=70
+k autoscale deployment web --min=2 --max=5 --cpu=70%      # older kubectl: --cpu-percent=70
 k create job hello --image=busybox -- echo hi
 k create cronjob tick --image=busybox --schedule='*/5 * * * *' -- date
 
@@ -63,6 +67,15 @@ k cordon|uncordon <node>
 k drain <node> --ignore-daemonsets --delete-emptydir-data
 k taint nodes <node> key=value:NoSchedule      # append '-' to remove
 k label nodes <node> disktype=ssd
+
+# Helm, Kustomize, CRDs
+helm repo add <name> <url> && helm repo update
+helm install <release> <name>/<chart> -n <ns> --create-namespace --set key=value
+helm upgrade --install <release> <name>/<chart> -n <ns> -f values.yaml
+helm list -A; helm show values <name>/<chart>; helm rollback <release> <revision>
+k kustomize <dir>          # render
+k apply -k <dir>           # apply
+k get crd; k api-resources --api-group=<group>
 
 # Finding things
 k explain pod.spec.affinity --recursive | less
@@ -105,7 +118,9 @@ kubelet restarts the component. The kubelet itself is a **systemd service**.
 ## Hands-on lab exercises
 
 Do each lab until you can finish it without notes. Use a kubeadm cluster on VMs (or
-[killercoda](https://killercoda.com) playgrounds) — kind and minikube hide the parts the exam tests.
+[killercoda](https://killercoda.com) playgrounds). kind and minikube are fine for workload,
+networking and storage practice, but they hide kubeadm, the kubelet service and etcd, which the
+exam tests.
 
 ### Lab 1 — Bootstrap a cluster with kubeadm
 
@@ -122,12 +137,12 @@ Do each lab until you can finish it without notes. Use a kubeadm cluster on VMs 
 Control plane node:
 
 ```bash
-# point the apt repo at the new minor version, then:
-apt-get update && apt-get install -y kubeadm=<version>
+# point the apt repo at the new minor version, then (packages are normally held):
+apt-mark unhold kubeadm && apt-get update && apt-get install -y kubeadm='1.xx.y-*' && apt-mark hold kubeadm
 kubeadm upgrade plan
-kubeadm upgrade apply v<version>
+kubeadm upgrade apply v1.xx.y
 kubectl drain <cp-node> --ignore-daemonsets
-apt-get install -y kubelet=<version> kubectl=<version>
+apt-mark unhold kubelet kubectl && apt-get install -y kubelet='1.xx.y-*' kubectl='1.xx.y-*' && apt-mark hold kubelet kubectl
 systemctl daemon-reload && systemctl restart kubelet
 kubectl uncordon <cp-node>
 ```

@@ -10,6 +10,7 @@ const DATA = {
   certs: {
     kcna: {
       name: "KCNA",
+      curriculumNote: "The domains here follow the pre-November-2025 outline. The current official outline is: Kubernetes Fundamentals 44%, Container Orchestration 28%, Cloud Native Application Delivery 16%, Cloud Native Architecture 12% (observability now sits inside Architecture).",
       title: "Kubernetes and Cloud Native Associate",
       format: "Multiple choice · 60 questions",
       duration: "90 minutes",
@@ -82,6 +83,7 @@ const DATA = {
 
     kcsa: {
       name: "KCSA",
+      curriculumNote: "The domains here are a study grouping, not the official outline, which is: Overview of Cloud Native Security 14%, Kubernetes Cluster Component Security 22%, Kubernetes Security Fundamentals 22%, Kubernetes Threat Model 16%, Platform Security 16%, Compliance and Security Frameworks 10%.",
       title: "Kubernetes and Cloud Native Security Associate",
       format: "Multiple choice · 60 questions",
       duration: "90 minutes",
@@ -240,9 +242,10 @@ const DATA = {
       cmds: [
         ["alias k=kubectl", "Usually pre-set in the exam shell"],
         ["export do='--dry-run=client -o yaml'", "Generate manifests: k run web --image=nginx $do > pod.yaml"],
-        ["export now='--force --grace-period=0'", "Delete pods immediately: k delete pod web $now"],
+        ["export now='--force --grace-period=0'", "Delete pods immediately: k delete pod web $now (skips graceful shutdown — practice clusters only)"],
         ["kubectl config get-contexts", "List contexts"],
-        ["kubectl config use-context <name>", "Switch cluster — do this first for every task"],
+        ["ssh <host>", "Current exam: each task names a host to ssh to first; run exit when the task is done"],
+        ["kubectl config use-context <name>", "Switch context when a task or practice environment asks for it"],
         ["kubectl config set-context --current --namespace=<ns>", "Set the default namespace"]
       ]
     },
@@ -258,7 +261,7 @@ const DATA = {
         ["kubectl create job hello --image=busybox -- echo hi", "Create a Job"],
         ["kubectl create cronjob tick --image=busybox --schedule='*/5 * * * *' -- date", "Create a CronJob"],
         ["kubectl create ingress web --rule='app.example.com/*=web:80' --class=nginx", "Create an Ingress"],
-        ["kubectl autoscale deployment web --min=2 --max=5 --cpu-percent=70", "Create an HPA"]
+        ["kubectl autoscale deployment web --min=2 --max=5 --cpu=70%", "Create an HPA (older kubectl: --cpu-percent=70)"]
       ]
     },
     {
@@ -312,6 +315,22 @@ const DATA = {
       ]
     },
     {
+      title: "Helm, Kustomize & CRDs", tool: "helm", certs: ["cka"],
+      cmds: [
+        ["helm repo add <name> <url> && helm repo update", "Add a chart repository"],
+        ["helm install <release> <repo>/<chart> -n <ns> --create-namespace --set key=value", "Install a chart"],
+        ["helm upgrade --install <release> <repo>/<chart> -n <ns> -f values.yaml", "Upgrade, or install if missing"],
+        ["helm list -A", "Releases in every namespace"],
+        ["helm show values <repo>/<chart>", "Configurable values of a chart"],
+        ["helm template <release> <repo>/<chart> -f values.yaml", "Render manifests without installing"],
+        ["helm rollback <release> <revision> -n <ns>", "Roll a release back"],
+        ["kubectl kustomize <dir>", "Render a kustomization"],
+        ["kubectl apply -k <dir>", "Apply a kustomization"],
+        ["kubectl get crd", "Installed CustomResourceDefinitions"],
+        ["kubectl api-resources --api-group=<group>", "Kinds a CRD or operator added"]
+      ]
+    },
+    {
       title: "etcd backup & restore", tool: "etcdctl", certs: ["cka", "kcsa"],
       cmds: [
         ["ETCDCTL_API=3 etcdctl --endpoints=https://127.0.0.1:2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key snapshot save /opt/etcd-backup.db", "Take a snapshot (cert paths are in /etc/kubernetes/manifests/etcd.yaml)"],
@@ -362,8 +381,8 @@ const DATA = {
       title: "Pod security & hardening", tool: "security", certs: ["kcsa"],
       cmds: [
         ["kubectl label ns dev pod-security.kubernetes.io/enforce=restricted", "Enforce the Restricted Pod Security Standard"],
-        ["kubectl label ns dev pod-security.kubernetes.io/warn=restricted --dry-run=server --overwrite", "Preview which workloads would violate"],
-        ["kubectl get pods -A -o jsonpath='{range .items[?(@.spec.containers[*].securityContext.privileged==true)]}{.metadata.namespace}/{.metadata.name}{\"\\n\"}{end}'", "Find privileged pods"],
+        ["kubectl label --dry-run=server --overwrite ns dev pod-security.kubernetes.io/enforce=restricted", "Preview which existing pods would violate, without changing anything"],
+        ["kubectl get pods -A -o json | jq -r '.items[] | select([.spec.containers[]?, .spec.initContainers[]?] | any(.securityContext.privileged == true)) | \"\\(.metadata.namespace)/\\(.metadata.name)\"'", "Find privileged pods, including init containers"],
         ["kubectl get secrets -A --field-selector type=kubernetes.io/service-account-token", "Find legacy long-lived SA tokens"],
         ["etcdctl <tls flags> get /registry/secrets/default/db | hexdump -C | head", "Confirm a Secret is encrypted at rest (value starts with k8s:enc:)"],
         ["grep encryption-provider-config /etc/kubernetes/manifests/kube-apiserver.yaml", "Is an EncryptionConfiguration wired into the API server?"]
@@ -402,27 +421,35 @@ const DATA = {
     ],
     kcsa: [
       { group: "Open-source repositories & security notes", items: [
-        ["iamaliyousefi/kcsa", "https://github.com/iamaliyousefi/kcsa", "Curated sources on compliance frameworks (CIS, NIST, NSA/CISA), Pod Security Standards and container security."],
+        ["aysabzevar/kcsa", "https://github.com/aysabzevar/kcsa", "Curated sources on compliance frameworks (CIS, NIST, NSA/CISA), Pod Security Standards and container security. Last updated in 2024."],
         ["InfraSec KCSA Study Guide", "https://infrasec.sh/post/cncf-kcsa/", "Domain-by-domain notes with the OWASP Kubernetes Top 10, STRIDE and ATT&CK threat modelling, and scanner tools."]
       ] },
       { group: "Standards & threat frameworks", items: [
         ["NSA/CISA Kubernetes Hardening Guidance", "https://www.nsa.gov/Press-Room/News-Highlights/Article/Article/2719161/nsa-cisa-release-kubernetes-hardening-guidance/", "Official hardening report that the security curriculum draws on heavily."],
         ["OWASP Kubernetes Security Testing Guide", "https://owasp.org/www-project-kubernetes-security-testing-guide/", "Threat models, common misconfigurations and cluster attack paths."]
+      ] },
+      { group: "Official Kubernetes docs", items: [
+        ["Kubernetes security concepts", "https://kubernetes.io/docs/concepts/security/", "The primary source for most exam topics: API access control, secrets, multi-tenancy, hardening."],
+        ["Pod Security Standards", "https://kubernetes.io/docs/concepts/security/pod-security-standards/", "Exact definitions of the Privileged, Baseline and Restricted profiles."]
       ] }
     ],
     cka: [
-      { group: "Hands-on labs & repositories", items: [
-        ["codewithmuh/cka-course", "https://github.com/codewithmuh/cka-course", "Free course: 7 modules, 44 hands-on lessons, a local kind lab and 3 timed mock exams."],
-        ["walidshaari/Kubernetes-Certified-Administrator", "https://github.com/walidshaari/Kubernetes-Certified-Administrator", "Community list of resources per curriculum topic. Written for an older curriculum, so check dates."],
-        ["alijahnas/CKA-practice-exercises", "https://github.com/alijahnas/CKA-practice-exercises", "Practice exercises organised by exam domain."]
+      { group: "Official docs (allowed in the exam)", items: [
+        ["Kubernetes documentation", "https://kubernetes.io/docs/", "Practise searching and navigating it quickly."],
+        ["kubectl quick reference", "https://kubernetes.io/docs/reference/kubectl/quick-reference/", "Imperative command syntax worth knowing by heart."],
+        ["Helm documentation", "https://helm.sh/docs/", "Also allowed during the exam."],
+        ["Gateway API documentation", "https://gateway-api.sigs.k8s.io/", "Allowed during the CKA exam; source for Gateway and HTTPRoute examples."],
+        ["Linux Foundation — CKA exam instructions", "https://docs.linuxfoundation.org/tc-docs/certification/tips-cka-and-ckad", "How the exam environment works: ssh to a host per task, pre-installed tools."]
       ] },
-      { group: "Free practice environments", items: [
+      { group: "Practice environments", items: [
+        ["Killercoda", "https://killercoda.com/", "Free browser-based Kubernetes playgrounds and CKA scenarios."],
         ["Play with Kubernetes", "https://labs.play-with-k8s.com/", "Browser-based multi-node lab for practising kubeadm init / join and node maintenance."],
         ["killer.sh CKA Simulator", "https://killer.sh/", "Exam simulator; two sessions are included when you register for the CKA exam."]
       ] },
-      { group: "Official docs (allowed in the exam)", items: [
-        ["Kubernetes documentation", "https://kubernetes.io/docs/", "Practise searching and navigating it quickly."],
-        ["kubectl quick reference", "https://kubernetes.io/docs/reference/kubectl/cheatsheet/", "Imperative command syntax worth knowing by heart."]
+      { group: "Community repositories", items: [
+        ["alijahnas/CKA-practice-exercises", "https://github.com/alijahnas/CKA-practice-exercises", "Practice exercises by exam domain. Last updated in early 2024, so it lacks Gateway API, Helm and Kustomize."],
+        ["walidshaari/Kubernetes-Certified-Administrator", "https://github.com/walidshaari/Kubernetes-Certified-Administrator", "Community list of resources per curriculum topic. Written for an older curriculum, so check dates."],
+        ["codewithmuh/cka-course", "https://github.com/codewithmuh/cka-course", "Course with 7 modules, 44 lessons, a local kind lab and 3 mock exams. Very new and little reviewed; kind hides the kubeadm parts of the exam."]
       ] }
     ]
   },
@@ -478,7 +505,13 @@ const DATA = {
     { cert: "cka", type: "concept", q: "Which Gateway API resources route HTTP traffic?", a: "GatewayClass (which controller), Gateway (listeners: ports, hostnames, TLS), HTTPRoute (rules attaching to a Gateway via parentRefs → backend Services)." },
     { cert: "cka", type: "command", q: "See why a container crashed last time.", a: "kubectl logs <pod> -c <container> --previous   and   kubectl describe pod <pod>  (Last State, Exit Code)" },
     { cert: "cka", type: "command", q: "List containers on a node when kubectl doesn't work.", a: "crictl ps -a   then   crictl logs <container-id>" },
-    { cert: "cka", type: "command", q: "Test DNS resolution from inside the cluster.", a: "kubectl run dns --rm -it --image=busybox:1.36 --restart=Never -- nslookup kubernetes.default" }
+    { cert: "cka", type: "command", q: "Test DNS resolution from inside the cluster.", a: "kubectl run dns --rm -it --image=busybox:1.36 --restart=Never -- nslookup kubernetes.default" },
+    { cert: "cka", type: "command", q: "Install a Helm chart into its own namespace.", a: "helm repo add <name> <url> && helm install <release> <name>/<chart> -n <ns> --create-namespace" },
+    { cert: "cka", type: "command", q: "Apply a Kustomize directory.", a: "kubectl apply -k <dir>   (preview with: kubectl kustomize <dir>)" },
+    { cert: "cka", type: "concept", q: "A default-deny NetworkPolicy is applied and pods can't resolve names. Why?", a: "Egress is denied too, including DNS. Add an egress rule allowing UDP and TCP port 53 to the cluster DNS pods." },
+    { cert: "cka", type: "concept", q: "An HPA shows <unknown> for its CPU target. Likely causes?", a: "metrics-server isn't installed or healthy, or the pods have no CPU requests — utilisation is measured against the request." },
+    { cert: "cka", type: "command", q: "Let ServiceAccount ci in namespace dev list pods there.", a: "kubectl create role pod-reader --verb=get,list,watch --resource=pods -n dev && kubectl create rolebinding ci-pods --role=pod-reader --serviceaccount=dev:ci -n dev" },
+    { cert: "cka", type: "concept", q: "How does the current CKA exam give you access to each cluster?", a: "Each task names a host. ssh to it, do the work (sudo -i if needed), then exit back to the base host before the next task." }
   ]
 };
 

@@ -36,6 +36,7 @@ Finishing all items in a 30% domain earns 30 points; half of them earns 15. The 
 |--------|-----|
 | Plain HTML + CSS + vanilla JS, no build step | Nothing to install, nothing to break; GitHub Pages serves the files as-is. |
 | No CDN or third-party requests | Works offline and from `file://`; no supply-chain exposure. |
+| Strict Content-Security-Policy | `default-src 'none'`, scripts and styles from the site only, no inline code. |
 | All content in one data file | Changing a weight or adding a topic never touches application code. |
 | `localStorage` for state | No backend or account; progress stays in the user's browser. |
 
@@ -45,6 +46,7 @@ Finishing all items in a 30% domain earns 30 points; half of them earns 15. The 
 ├── assets/
 │   ├── css/styles.css          # Theme tokens (light/dark) and layout
 │   └── js/
+│       ├── theme.js            # Applies the saved theme before first paint
 │       ├── data.js             # ALL content: certs, domains, weights, items, commands, flashcards, resources
 │       └── app.js              # State, rendering, events
 ├── scripts/validate-data.js    # Content sanity checks (weights sum to 100, etc.)
@@ -89,12 +91,18 @@ One-time repository setup is described in [docs/GITHUB_PAGES_SETUP.md](docs/GITH
 
 ## A note on domain weights
 
-The domain names and weights follow the project brief
-([`kcna_kcsa_cka_dashboard_agent_prompt.md`](kcna_kcsa_cka_dashboard_agent_prompt.md)). CNCF revises
-its curricula periodically, and the official KCNA and KCSA outlines may group topics differently
-from the brief. Before booking an exam, compare against <https://github.com/cncf/curriculum> and
-adjust `data.js` if needed. One deliberate deviation: the brief's CKA domain "Workloads & Services"
-is named **Workloads & Scheduling** here, matching the official CKA curriculum.
+- **CKA** matches the official curriculum (Storage 10, Troubleshooting 30, Workloads & Scheduling
+  15, Cluster Architecture 25, Services & Networking 20).
+- **KCNA** follows the project brief, which uses the pre-November-2025 outline. The current official
+  outline is Kubernetes Fundamentals 44%, Container Orchestration 28%, Cloud Native Application
+  Delivery 16%, Cloud Native Architecture 12%.
+- **KCSA** follows the project brief, which is a study grouping rather than the official outline:
+  Overview of Cloud Native Security 14%, Kubernetes Cluster Component Security 22%, Kubernetes
+  Security Fundamentals 22%, Kubernetes Threat Model 16%, Platform Security 16%, Compliance and
+  Security Frameworks 10%.
+
+The dashboard shows this note on the KCNA and KCSA overview pages. Always confirm against
+<https://github.com/cncf/curriculum> before booking an exam.
 
 This project is an independent study aid and is not affiliated with or endorsed by the CNCF or
 The Linux Foundation.

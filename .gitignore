@@ -1,3 +1,6 @@
 _site/
 node_modules/
 .DS_Store
+
+# Local-only review findings (not published)
+docs/reviews/
