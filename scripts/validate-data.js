@@ -6,15 +6,18 @@ const DATA = require("../assets/js/data.js");
 const errors = [];
 const PRIORITIES = ["high", "medium", "low"];
 const TYPES = ["concept", "definition", "command"];
+const KEY_RE = /^[a-z0-9-]+$/; // keys end up in HTML attributes and CSS selectors
 
 for (const [key, cert] of Object.entries(DATA.certs)) {
   const total = cert.domains.reduce((s, d) => s + d.weight, 0);
   if (total !== 100) errors.push(`${key}: domain weights sum to ${total}, expected 100`);
 
+  if (!KEY_RE.test(key)) errors.push(`cert key "${key}" must match ${KEY_RE}`);
   const keys = new Set();
   for (const d of cert.domains) {
     if (keys.has(d.key)) errors.push(`${key}: duplicate domain key "${d.key}"`);
     keys.add(d.key);
+    if (!KEY_RE.test(d.key)) errors.push(`${key}: domain key "${d.key}" must match ${KEY_RE}`);
     if (!d.items.length) errors.push(`${key}/${d.key}: no checklist items`);
     d.items.forEach(([title, priority, week], i) => {
       const where = `${key}/${d.key}[${i}]`;
@@ -26,6 +29,7 @@ for (const [key, cert] of Object.entries(DATA.certs)) {
 }
 
 for (const s of DATA.cheats) {
+  if (!KEY_RE.test(s.tool)) errors.push(`cheats "${s.title}": tool "${s.tool}" must match ${KEY_RE}`);
   for (const c of s.certs) if (!DATA.certs[c]) errors.push(`cheats "${s.title}": unknown cert "${c}"`);
   for (const cmd of s.cmds) if (cmd.length !== 2 || !cmd[0] || !cmd[1]) errors.push(`cheats "${s.title}": malformed command entry`);
 }

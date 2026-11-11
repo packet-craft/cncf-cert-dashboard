@@ -4,8 +4,11 @@
 proctored, pass mark 75%. It is a knowledge exam: there is no terminal, but you are expected to
 recognise `kubectl` commands and what resources do.
 
-> Domain weights below follow this project's brief. Check the current official outline at
-> <https://github.com/cncf/curriculum> before the exam.
+> **The domains below follow the pre-November-2025 outline.** The current official outline
+> (<https://github.com/cncf/curriculum>) has four domains: Kubernetes Fundamentals 44%, Container
+> Orchestration 28% (now including troubleshooting), Cloud Native Application Delivery 16%
+> (including debugging) and Cloud Native Architecture 12% (which now contains observability). The
+> topics in this guide are still examined; their grouping and weights have changed.
 
 ## Topic breakdown
 
@@ -32,7 +35,7 @@ component in the next section from memory.
 | `kube-controller-manager` | Control plane | Runs reconciliation loops (Deployment, ReplicaSet, Node, Job…) |
 | `cloud-controller-manager` | Control plane | Cloud-specific loops: load balancers, node lifecycle, routes |
 | `kubelet` | Every node | Makes sure the containers described in PodSpecs are running |
-| `kube-proxy` | Every node | Programs iptables/IPVS rules that implement Services |
+| `kube-proxy` | Every node | Programs iptables or nftables rules that implement Services |
 | Container runtime | Every node | Runs containers (containerd, CRI-O) via the CRI |
 
 **Reconciliation** is the core idea: you declare desired state, controllers continuously compare it

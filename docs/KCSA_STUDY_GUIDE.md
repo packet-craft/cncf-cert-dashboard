@@ -4,8 +4,10 @@
 online proctored, pass mark 75%. Conceptual, not hands-on, but questions assume you can read
 manifests and recognise security-relevant flags.
 
-> Domain names and weights below follow this project's brief. The official outline may group the
-> same topics differently — check <https://github.com/cncf/curriculum> before the exam.
+> **The domains below are a study grouping, not the official outline.** The official outline
+> (<https://github.com/cncf/curriculum>) has six domains: Overview of Cloud Native Security 14%,
+> Kubernetes Cluster Component Security 22%, Kubernetes Security Fundamentals 22%, Kubernetes
+> Threat Model 16%, Platform Security 16%, and Compliance and Security Frameworks 10%.
 
 | Domain | Weight | Suggested weeks |
 |--------|-------:|-----------------|
@@ -49,7 +51,7 @@ Request → Authentication → Authorization → Mutating admission → Schema v
 | kube-apiserver | `--anonymous-auth=false`, `--authorization-mode=Node,RBAC`, audit logging on, `--encryption-provider-config` set, `NodeRestriction` enabled |
 | etcd | Client and peer TLS, reachable only from the API server, encryption at rest, backed-up and access-controlled data dir |
 | kubelet | `--anonymous-auth=false`, `--authorization-mode=Webhook`, read-only port (10255) disabled, certificate rotation |
-| controller-manager / scheduler | Bind to localhost, `--use-service-account-credentials=true`, profiling off |
+| controller-manager / scheduler | Bind to localhost, profiling off; controller-manager: `--use-service-account-credentials=true` |
 | kube-proxy / CNI | Keep patched; the CNI must actually enforce NetworkPolicy |
 
 ## 3. RBAC
@@ -255,4 +257,4 @@ rules:
 - RBAC good practices: <https://kubernetes.io/docs/concepts/security/rbac-good-practices/>
 - CIS Kubernetes Benchmark: <https://www.cisecurity.org/benchmark/kubernetes>
 - NSA/CISA Kubernetes Hardening Guide
-- CNCF TAG Security — Cloud Native Security Whitepaper: <https://github.com/cncf/tag-security>
+- CNCF TAG Security — Cloud Native Security Whitepaper: <https://github.com/cncf/tag-security> (repository now archived)
