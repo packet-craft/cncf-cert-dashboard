@@ -2,7 +2,7 @@
   "use strict";
 
   var KEY = { done: "cncf-dash:v1:done", known: "cncf-dash:v1:known", ui: "cncf-dash:v1:ui" };
-  var VIEWS = [["overview", "Overview"], ["checklist", "Checklist"], ["cheats", "Cheat Sheet"], ["flashcards", "Flashcards"], ["resources", "Resources"]];
+  var VIEWS = [["overview", "Overview"], ["learn", "Study Guide"], ["checklist", "Checklist"], ["cheats", "Cheat Sheet"], ["flashcards", "Flashcards"], ["resources", "Resources"]];
   var PRIORITY_RANK = { high: 0, medium: 1, low: 2 };
   var MAX_IMPORT_BYTES = 1024 * 1024;
 
@@ -20,6 +20,17 @@
         var id = certKey + "-" + d.key + "-" + i;
         ITEM_IDS.add(id);
         return { id: id, title: t[0], priority: t[1], week: t[2], domain: d.key };
+      });
+    });
+  });
+  // Study guide: attach each domain's topics and precompute the text used by guide search.
+  Object.keys(DATA.certs).forEach(function (certKey) {
+    var docs = DATA.docs && DATA.docs[certKey];
+    DATA.certs[certKey].domains.forEach(function (d) {
+      d.doc = docs && own(docs, d.key) ? docs[d.key] : null;
+      if (!d.doc) return;
+      d.doc.topics.forEach(function (t) {
+        t.text = (t.title + " " + t.summary + " " + t.body.join(" ")).toLowerCase();
       });
     });
   });
@@ -60,6 +71,7 @@
     done: idSet(read(KEY.done), ITEM_IDS),
     known: idSet(read(KEY.known), CARD_IDS),
     filters: { domain: "all", priority: "all", week: "all", q: "", hideDone: false },
+    doc: { domain: null, topic: null, q: "" },
     cheat: { tool: "all", q: "" },
     fc: { type: "all", hideKnown: false, index: 0, flipped: false, order: null }
   };
@@ -110,6 +122,61 @@
     el.classList.add("show");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { el.classList.remove("show"); }, 2600);
+  }
+
+  // ---------- markdown ----------
+  // Guide content is written as a small Markdown subset. Everything is escaped before any
+  // markup is added, so content can never inject HTML.
+  function inline(s) {
+    return String(s).split("`").map(function (part, i) {
+      if (i % 2) return "<code>" + esc(part) + "</code>";
+      return esc(part)
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*(.+?)\*/g, "<em>$1</em>")
+        .replace(/\[([^\]]+)\]\((https:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    }).join("");
+  }
+  function cells(row) { return row.trim().replace(/^\||\|$/g, "").split("|"); }
+  function md(lines) {
+    var html = "", i = 0, n = lines.length, buf, m;
+    while (i < n) {
+      var line = lines[i];
+      if (!line.trim()) { i++; continue; }
+      if (/^```/.test(line)) {
+        buf = []; i++;
+        while (i < n && !/^```/.test(lines[i])) buf.push(lines[i++]);
+        i++;
+        html += '<pre tabindex="0"><code>' + esc(buf.join("\n")) + "</code></pre>";
+      } else if ((m = /^(#{2,3}) (.*)/.exec(line))) {
+        var tag = m[1].length === 2 ? "h3" : "h4";
+        html += "<" + tag + ">" + inline(m[2]) + "</" + tag + ">"; i++;
+      } else if (/^\|/.test(line)) {
+        buf = [];
+        while (i < n && /^\|/.test(lines[i])) buf.push(lines[i++]);
+        html += '<div class="table-wrap" tabindex="0"><table><thead><tr>' +
+          cells(buf[0]).map(function (c) { return "<th>" + inline(c.trim()) + "</th>"; }).join("") + "</tr></thead><tbody>" +
+          buf.slice(2).map(function (r) {
+            return "<tr>" + cells(r).map(function (c) { return "<td>" + inline(c.trim()) + "</td>"; }).join("") + "</tr>";
+          }).join("") + "</tbody></table></div>";
+      } else if (/^> /.test(line)) {
+        buf = [];
+        while (i < n && /^> ?/.test(lines[i])) buf.push(lines[i++].replace(/^> ?/, ""));
+        html += '<p class="callout">' + inline(buf.join(" ")) + "</p>";
+      } else if (/^(- |\d+\. )/.test(line)) {
+        var ordered = /^\d/.test(line);
+        buf = [];
+        while (i < n && (/^(- |\d+\. )/.test(lines[i]) || (/^ {2,}\S/.test(lines[i]) && buf.length))) {
+          if (/^ /.test(lines[i])) buf[buf.length - 1] += " " + lines[i].trim();
+          else buf.push(lines[i].replace(/^(- |\d+\. )/, ""));
+          i++;
+        }
+        html += (ordered ? "<ol>" : "<ul>") + buf.map(function (x) { return "<li>" + inline(x) + "</li>"; }).join("") + (ordered ? "</ol>" : "</ul>");
+      } else {
+        // Each remaining line is one paragraph.
+        html += "<p>" + inline(line.trim()) + "</p>"; i++;
+      }
+    }
+    return html;
   }
 
   // ---------- header ----------
@@ -178,10 +245,11 @@
         '</section>' +
       '</div>' +
 
-      '<div class="section-head"><h2>Domains</h2><span class="muted small">Select a domain to open its checklist</span></div>' +
+      '<div class="section-head"><h2>Domains</h2><span class="muted small">Select a domain to open its ' +
+        (hasDocs(cert) ? "study guide" : "checklist") + '</span></div>' +
       '<div class="grid domains">' + cert.domains.map(function (d) {
         var s = domainStats(d);
-        return '<button class="card domain-card" type="button" data-goto-domain="' + esc(d.key) + '">' +
+        return '<button class="card domain-card" type="button" ' + (d.doc ? "data-doc" : "data-goto-domain") + '="' + esc(d.key) + '">' +
           '<span class="top"><span class="name">' + esc(d.name) + '</span><span class="badge accent num">' + d.weight + '%</span></span>' +
           bar(s.ratio * 100) +
           '<span class="stats small muted num"><span>' + s.done + ' / ' + s.total + ' items</span><span>' +
@@ -196,6 +264,119 @@
           }).join("") + '</ul>'
         : '<p class="empty">Everything is checked off. Time for timed mock exams.</p>') +
       '</div>';
+  }
+
+  // ---------- study guide ----------
+  function hasDocs(cert) { return cert.domains.some(function (d) { return d.doc; }); }
+  function topicItems(d, t) { return t.items.map(function (i) { return d.items[i]; }); }
+  function topicDone(d, t) { return topicItems(d, t).every(function (it) { return state.done.has(it.id); }); }
+  function flatTopics(cert) {
+    var out = [];
+    cert.domains.forEach(function (d) {
+      if (d.doc) d.doc.topics.forEach(function (t) { out.push({ d: d, t: t, ref: d.key + "/" + t.key }); });
+    });
+    return out;
+  }
+  // Resolve state.doc to a real domain (and topic); fall back to the first documented domain.
+  function currentDoc(cert) {
+    var d = cert.domains.filter(function (x) { return x.doc && x.key === state.doc.domain; })[0] ||
+      cert.domains.filter(function (x) { return x.doc; })[0] || null;
+    var t = d && d.doc.topics.filter(function (x) { return x.key === state.doc.topic; })[0] || null;
+    state.doc.domain = d ? d.key : null;
+    state.doc.topic = t ? t.key : null;
+    return { d: d, t: t };
+  }
+  function tick(done) { return '<span class="tick' + (done ? " on" : "") + '" aria-hidden="true"></span>' + (done ? '<span class="sr-only">Completed: </span>' : ""); }
+  function docNav(cert) {
+    var cur = currentDoc(cert), q = state.doc.q.trim().toLowerCase();
+    if (q) {
+      var hits = flatTopics(cert).filter(function (x) { return x.t.text.indexOf(q) !== -1; });
+      return hits.length ? '<ul class="doc-topics">' + hits.map(function (x) {
+        return '<li><button type="button" class="doc-link" data-doc="' + esc(x.ref) + '">' + tick(topicDone(x.d, x.t)) +
+          '<span>' + esc(x.t.title) + '<br><span class="small muted">' + esc(x.d.name) + '</span></span></button></li>';
+      }).join("") + '</ul>' : '<p class="small muted doc-empty">No topics mention “' + esc(state.doc.q.trim()) + '”.</p>';
+    }
+    return cert.domains.map(function (d) {
+      if (!d.doc) return "";
+      var open = cur.d === d, s = domainStats(d);
+      return '<button type="button" class="doc-domain" data-doc="' + esc(d.key) + '"' + (open && !cur.t ? ' aria-current="page"' : "") + '>' +
+        '<span>' + esc(d.name) + '</span><span class="small muted num">' + s.done + "/" + s.total + '</span></button>' +
+        (open ? '<ul class="doc-topics">' + d.doc.topics.map(function (t) {
+          return '<li><button type="button" class="doc-link" data-doc="' + esc(d.key + "/" + t.key) + '"' +
+            (cur.t === t ? ' aria-current="page"' : "") + '>' + tick(topicDone(d, t)) + '<span>' + esc(t.title) + '</span></button></li>';
+        }).join("") + '</ul>' : "");
+    }).join("");
+  }
+  function docSelect(cert) {
+    var cur = currentDoc(cert), sel = cur.d.key + (cur.t ? "/" + cur.t.key : "");
+    return '<label class="doc-select">Jump to<select data-doc-select>' + cert.domains.map(function (d) {
+      if (!d.doc) return "";
+      return '<optgroup label="' + esc(d.name + " (" + d.weight + "%)") + '">' +
+        options([[d.key, "Domain overview"]].concat(d.doc.topics.map(function (t) { return [d.key + "/" + t.key, t.title]; })), sel) + '</optgroup>';
+    }).join("") + '</select></label>';
+  }
+  function itemList(items) {
+    return '<ul class="items">' + items.map(function (it) {
+      var done = state.done.has(it.id);
+      return '<li class="item' + (done ? " done" : "") + '"><label>' +
+        '<input type="checkbox" data-item="' + esc(it.id) + '"' + (done ? " checked" : "") + '>' +
+        '<span class="title">' + esc(it.title) + '</span>' +
+        '<span class="tags"><span class="badge ' + esc(it.priority) + '">' + cap(it.priority) + '</span></span></label></li>';
+    }).join("") + '</ul>';
+  }
+  function domainPage(cert, d) {
+    var s = domainStats(d);
+    return '<p class="crumbs small muted">' + esc(cert.name) + ' study guide</p>' +
+      '<h2 class="doc-title">' + esc(d.name) + ' <span class="badge accent num">' + d.weight + '% of the exam</span></h2>' +
+      '<div class="prose">' + md(d.doc.intro) + '</div>' +
+      '<div class="doc-progress">' + bar(s.ratio * 100) + '<span class="small muted num">' + s.done + ' of ' + s.total +
+        ' checklist items done · ' + s.points.toFixed(1) + ' / ' + d.weight + ' pts</span></div>' +
+      '<h3 class="doc-sub">Topics</h3>' +
+      '<ol class="topic-cards">' + d.doc.topics.map(function (t) {
+        return '<li><button type="button" class="card topic-card" data-doc="' + esc(d.key + "/" + t.key) + '">' +
+          '<span class="name">' + tick(topicDone(d, t)) + esc(t.title) + '</span>' +
+          '<span class="small muted">' + esc(t.summary) + '</span></button></li>';
+      }).join("") + '</ol>' +
+      '<p class="doc-actions"><button type="button" class="btn ghost" data-goto-domain="' + esc(d.key) + '">Open this domain’s checklist</button> ' +
+        '<button type="button" class="btn ghost" data-view="flashcards">Practise flashcards</button></p>';
+  }
+  function topicPage(cert, d, t) {
+    var flat = flatTopics(cert), idx = -1;
+    flat.forEach(function (x, i) { if (x.t === t) idx = i; });
+    var prev = flat[idx - 1], next = flat[idx + 1];
+    return '<p class="crumbs small"><button type="button" class="link" data-doc="' + esc(d.key) + '">' + esc(d.name) + '</button>' +
+        ' <span class="muted">› Topic ' + (d.doc.topics.indexOf(t) + 1) + ' of ' + d.doc.topics.length + '</span></p>' +
+      '<h2 class="doc-title">' + esc(t.title) + '</h2>' +
+      '<p class="lead muted">' + esc(t.summary) + '</p>' +
+      '<div class="prose">' + md(t.body) + '</div>' +
+      (t.quiz && t.quiz.length ? '<h3 class="doc-sub">Check yourself</h3><div class="quiz">' + t.quiz.map(function (qa) {
+        return '<details><summary>' + inline(qa[0]) + '</summary><p>' + inline(qa[1]) + '</p></details>';
+      }).join("") + '</div>' : "") +
+      '<h3 class="doc-sub">Track your progress</h3>' +
+      '<p class="small muted">Tick these off once you can explain them without looking. They are the same items as in the Checklist tab.</p>' +
+      '<div class="card group">' + itemList(topicItems(d, t)) + '</div>' +
+      '<div class="doc-pager">' +
+        (prev ? '<button type="button" class="card pager" data-doc="' + esc(prev.ref) + '"><span class="small muted">← Previous</span><span class="name">' + esc(prev.t.title) + '</span></button>' : '<span></span>') +
+        (next ? '<button type="button" class="card pager next" data-doc="' + esc(next.ref) + '"><span class="small muted">Next →</span><span class="name">' + esc(next.t.title) + '</span></button>' : '<span></span>') +
+      '</div>';
+  }
+  function renderLearn(cert) {
+    if (!hasDocs(cert)) {
+      return '<div class="card empty"><h2>' + esc(cert.name) + ' study guide</h2>' +
+        '<p>The detailed guide for ' + esc(cert.name) + ' has not been written yet. Until then, use the ' +
+        '<button type="button" class="link" data-view="checklist">checklist</button>, ' +
+        '<button type="button" class="link" data-view="flashcards">flashcards</button> and ' +
+        '<button type="button" class="link" data-view="resources">resources</button>.</p></div>';
+    }
+    var cur = currentDoc(cert);
+    return '<div class="learn">' +
+      '<aside class="doc-side" aria-label="Study guide contents">' +
+        '<input type="search" data-doc-q placeholder="Search the guide" aria-label="Search the guide" value="' + esc(state.doc.q) + '">' +
+        docSelect(cert) +
+        '<nav id="docNav" class="doc-nav' + (state.doc.q.trim() ? " searching" : "") + '" aria-label="Guide topics">' + docNav(cert) + '</nav>' +
+      '</aside>' +
+      '<article class="doc">' + (cur.t ? topicPage(cert, cur.d, cur.t) : domainPage(cert, cur.d)) + '</article>' +
+    '</div>';
   }
 
   // ---------- checklist ----------
@@ -348,15 +529,59 @@
   // ---------- render ----------
   function render() {
     var cert = DATA.certs[state.cert];
+    if (!hasDocs(cert)) { state.doc.domain = null; state.doc.topic = null; }
     renderHeader();
     var main = $("#main");
     main.innerHTML = state.view === "overview" ? renderOverview(cert)
+      : state.view === "learn" ? renderLearn(cert)
       : state.view === "checklist" ? renderChecklist(cert)
       : state.view === "cheats" ? renderCheats()
       : state.view === "resources" ? renderResources(cert)
       : renderFlashcards(cert);
     applyWidths(main);
-    document.title = cert.name + " · " + VIEWS.filter(function (v) { return v[0] === state.view; })[0][1] + " — CNCF Exam Prep";
+    var page = VIEWS.filter(function (v) { return v[0] === state.view; })[0][1];
+    if (state.view === "learn" && hasDocs(cert)) {
+      var cur = currentDoc(cert);
+      page = cur.t ? cur.t.title : cur.d.name;
+    }
+    document.title = cert.name + " · " + page + " — CNCF Exam Prep";
+    syncHash();
+  }
+
+  // ---------- routing ----------
+  // The address is #<cert>/<view>[/<domain>[/<topic>]], so guide pages can be linked and the
+  // Back button works. Unknown parts are ignored.
+  function hashFor() {
+    var h = "#" + state.cert + "/" + state.view;
+    if (state.view === "learn" && state.doc.domain) h += "/" + state.doc.domain + (state.doc.topic ? "/" + state.doc.topic : "");
+    return h;
+  }
+  function applyHash() {
+    var p = location.hash.replace(/^#\/?/, "").split("/");
+    if (!own(DATA.certs, p[0])) return false;
+    state.cert = p[0];
+    if (VIEWS.some(function (v) { return v[0] === p[1]; })) state.view = p[1];
+    if (state.view === "learn") { state.doc.domain = p[2] || null; state.doc.topic = p[3] || null; }
+    return true;
+  }
+  var firstRender = true;
+  function syncHash() {
+    var h = hashFor(), replace = firstRender;
+    firstRender = false;
+    if (location.hash === h) return;
+    try { history[replace ? "replaceState" : "pushState"](null, "", h); }
+    catch (e) { location.hash = h; }
+  }
+  function onRoute() {
+    if (location.hash === hashFor() || !applyHash()) return;
+    saveUi(); render();
+  }
+  window.addEventListener("popstate", onRoute);
+  window.addEventListener("hashchange", onRoute);
+  function openDoc(ref) {
+    var p = ref.split("/");
+    state.view = "learn"; state.doc = { domain: p[0], topic: p[1] || null, q: "" };
+    saveUi(); render(); window.scrollTo(0, 0);
   }
 
   // A re-render replaces the control that was just used. Put keyboard focus back on its
@@ -411,10 +636,12 @@
 
     if (d.cert) {
       if (!own(DATA.certs, d.cert)) return;
-      state.cert = d.cert; resetFilters(); state.fc.index = 0; state.fc.flipped = false; state.fc.order = null;
+      state.cert = d.cert; resetFilters(); state.doc = { domain: null, topic: null, q: "" }; state.fc.index = 0; state.fc.flipped = false; state.fc.order = null;
       saveUi(); render(); window.scrollTo(0, 0);
     } else if (d.view) {
       state.view = d.view; saveUi(); render(); window.scrollTo(0, 0);
+    } else if (d.doc) {
+      openDoc(d.doc);
     } else if (d.gotoDomain) {
       resetFilters(); state.filters.domain = d.gotoDomain; state.view = "checklist"; saveUi(); render();
       window.scrollTo(0, 0);
@@ -469,7 +696,18 @@
       if (!ITEM_IDS.has(d.item)) return;
       if (t.checked) state.done.add(d.item); else state.done.delete(d.item);
       saveDone();
+      if (state.view === "learn") {
+        // Keep the page (and any opened answers) in place; refresh only what shows progress.
+        renderHeader();
+        var nav = $("#docNav"), li = t.closest(".item");
+        if (nav) nav.innerHTML = docNav(DATA.certs[state.cert]);
+        if (li) li.classList.toggle("done", t.checked);
+        return;
+      }
       render();
+    } else if ("docSelect" in d) {
+      openDoc(t.value);
+      return;
     } else if (d.filter && t.type !== "search") {
       state.filters[d.filter] = t.type === "checkbox" ? t.checked : t.value;
       render();
@@ -492,6 +730,13 @@
       state.filters.q = target.value;
       body = $("#checklistBody");
       if (body) body.innerHTML = checklistBody(DATA.certs[state.cert]);
+    } else if ("docQ" in d) {
+      state.doc.q = target.value;
+      body = $("#docNav");
+      if (body) {
+        body.innerHTML = docNav(DATA.certs[state.cert]);
+        body.classList.toggle("searching", !!target.value.trim());
+      }
     } else if ("cheatQ" in d) {
       state.cheat.q = target.value;
       body = $("#cheatBody");
@@ -549,5 +794,6 @@
     }).catch(function () { toast("That file isn't a valid progress export"); });
   }
 
+  applyHash();
   render();
 })();

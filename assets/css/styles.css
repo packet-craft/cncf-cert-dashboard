@@ -283,6 +283,84 @@ kbd { font: .8rem var(--mono); background: var(--surface-2); border: 1px solid v
 .resource .name { color: var(--accent-text); }
 .resource .host { margin-top: auto; color: var(--muted); font-family: var(--mono); }
 
+/* ---------- study guide ---------- */
+.learn { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 28px; align-items: start; }
+.doc-side {
+  position: sticky; top: 176px; max-height: calc(100vh - 196px); overflow-y: auto;
+  display: flex; flex-direction: column; gap: 10px; padding: 2px 4px 2px 2px;
+}
+.doc-select { display: none; flex-direction: column; gap: 4px; font-size: .8rem; color: var(--muted); font-weight: 600; }
+.doc-nav { display: flex; flex-direction: column; gap: 2px; }
+.doc-domain, .doc-link {
+  display: flex; gap: 8px; width: 100%; text-align: left; cursor: pointer;
+  background: none; border: 0; border-radius: 8px; font: inherit; color: var(--text); padding: 7px 10px;
+}
+.doc-domain { justify-content: space-between; align-items: baseline; font-weight: 700; margin-top: 6px; }
+.doc-link { align-items: flex-start; font-size: .92rem; color: var(--muted); }
+.doc-domain:hover, .doc-link:hover { background: var(--surface-2); }
+.doc-domain[aria-current="page"], .doc-link[aria-current="page"] { background: var(--accent-soft); color: var(--accent-text); }
+.doc-link[aria-current="page"] { font-weight: 600; }
+.doc-topics { list-style: none; margin: 0 0 4px; padding: 0 0 0 8px; border-left: 2px solid var(--border); margin-left: 10px; }
+.doc-empty { padding: 8px 10px; }
+.tick {
+  flex: none; display: inline-block; width: 14px; height: 14px; margin-top: 4px;
+  border: 2px solid var(--control-border); border-radius: 50%;
+}
+.tick.on { background: var(--good); border-color: var(--good); }
+.name .tick { margin: 0 8px 0 0; vertical-align: -1px; }
+
+.doc { min-width: 0; max-width: 780px; }
+.crumbs { margin-bottom: 6px; }
+.doc-title { font-size: 1.7rem; line-height: 1.2; letter-spacing: -.01em; }
+.doc-title .badge { vertical-align: middle; letter-spacing: 0; }
+.lead { font-size: 1.08rem; margin-top: 8px; }
+.doc-sub { font-size: 1.15rem; margin: 32px 0 10px; }
+.doc-progress { display: grid; gap: 6px; margin-top: 16px; }
+.doc-actions { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+.doc .group { margin-top: 10px; }
+
+.prose { margin-top: 16px; line-height: 1.65; overflow-wrap: break-word; }
+.prose > * + * { margin-top: 14px; }
+.prose h3 { font-size: 1.2rem; margin-top: 30px; padding-top: 18px; border-top: 1px solid var(--border); }
+.prose > h3:first-child { border-top: 0; padding-top: 0; margin-top: 20px; }
+.prose h4 { font-size: 1rem; margin: 22px 0 0; }
+.prose ul, .prose ol { margin-bottom: 0; padding-left: 22px; }
+.prose li + li { margin-top: 6px; }
+.prose code, .quiz code {
+  font: .86em var(--mono); background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 5px; padding: 1px 5px; overflow-wrap: anywhere;
+}
+.prose pre {
+  margin-bottom: 0; overflow-x: auto; background: var(--code-bg); color: var(--code-text);
+  padding: 12px 14px; border-radius: 10px; font: .85rem/1.5 var(--mono);
+}
+.prose td code { overflow-wrap: normal; }
+.prose td:first-child code { white-space: nowrap; }
+.prose pre code { font: inherit; background: none; border: 0; padding: 0; overflow-wrap: normal; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.prose table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+.prose th, .prose td { text-align: left; vertical-align: top; padding: 9px 12px; border-top: 1px solid var(--border); }
+.prose th { background: var(--surface-2); border-top: 0; font-size: .82rem; white-space: nowrap; }
+.callout {
+  background: var(--accent-soft); border-left: 4px solid var(--accent);
+  border-radius: 0 10px 10px 0; padding: 12px 14px;
+}
+
+.quiz { display: grid; gap: 8px; }
+.quiz details { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0 14px; }
+.quiz summary { cursor: pointer; font-weight: 600; padding: 12px 0; }
+.quiz details p { padding: 0 0 14px; color: var(--muted); }
+
+.topic-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.topic-card, .pager {
+  display: flex; flex-direction: column; gap: 4px; width: 100%; text-align: left;
+  font: inherit; color: inherit; cursor: pointer; padding: 12px 16px;
+}
+.topic-card:hover, .pager:hover { border-color: var(--accent); }
+.topic-card .name, .pager .name { font-weight: 700; }
+.doc-pager { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 32px; }
+.pager.next { text-align: right; align-items: flex-end; }
+
 /* ---------- misc ---------- */
 .footer .link { display: inline-block; padding: 3px 0; }
 .footer { padding-top: 16px; padding-bottom: 32px; border-top: 1px solid var(--border); display: grid; gap: 8px; }
@@ -293,7 +371,18 @@ kbd { font: .8rem var(--mono); background: var(--surface-2); border: 1px solid v
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+@media (max-width: 900px) {
+  .learn { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .doc-side { position: static; max-height: none; overflow: visible; padding: 0; }
+  .doc-select { display: flex; }
+  .doc-nav:not(:has(.doc-empty)):not(.searching) { display: none; }
+}
 @media (max-width: 760px) {
+  .prose td:first-child code { white-space: normal; }
+  .prose table:has(th:nth-child(3)) { min-width: 520px; }
+  .doc-title { font-size: 1.4rem; }
+  .doc-pager { grid-template-columns: minmax(0, 1fr); }
+  .pager.next { text-align: left; align-items: flex-start; }
   .overview-top { grid-template-columns: minmax(0, 1fr); }
   .readiness { flex-direction: column; text-align: center; }
   .cert-tab .pct-label { display: none; }
@@ -309,6 +398,7 @@ kbd { font: .8rem var(--mono); background: var(--surface-2); border: 1px solid v
   .view-tabs { flex-wrap: wrap; overflow: visible; }
 }
 @media (max-height: 600px) {
+  .doc-side { top: 16px; max-height: calc(100vh - 32px); }
   .topbar { position: static; }
   html { scroll-padding-top: 0; }
 }
