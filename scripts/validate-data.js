@@ -10,6 +10,10 @@ global.DATA = DATA;
 const DOCS_DIR = path.join(__dirname, "../assets/js/docs");
 const docFiles = fs.readdirSync(DOCS_DIR).filter((f) => f.endsWith(".js")).sort();
 for (const f of docFiles) require(path.join(DOCS_DIR, f));
+// Mock tests add to the global DATA.mocks in the same way.
+const MOCKS_DIR = path.join(__dirname, "../assets/js/mocks");
+const mockFiles = fs.readdirSync(MOCKS_DIR).filter((f) => f.endsWith(".js")).sort();
+for (const f of mockFiles) require(path.join(MOCKS_DIR, f));
 
 const errors = [];
 const PRIORITIES = ["high", "medium", "low"];
@@ -123,14 +127,56 @@ for (const [certKey, docs] of Object.entries(DATA.docs)) {
   }
 }
 
+// ---------- mock tests ----------
+// A test must have the number of questions per domain that the exam weights give for its size,
+// and every question needs four distinct options (the first is the correct one) and an explanation.
+let mockQuestions = 0;
+for (const [certKey, tests] of Object.entries(DATA.mocks || {})) {
+  const cert = DATA.certs[certKey];
+  if (!cert) { errors.push(`mocks: unknown cert "${certKey}"`); continue; }
+  if (mockFiles.indexOf(`${certKey}.js`) === -1) errors.push(`mocks/${certKey}: expected in assets/js/mocks/${certKey}.js`);
+  const tKeys = new Set(), seenQ = new Set();
+  for (const t of tests) {
+    const where = `mocks/${certKey}/${t.key}`;
+    if (!KEY_RE.test(t.key || "")) errors.push(`${where}: test key must match ${KEY_RE}`);
+    if (tKeys.has(t.key)) errors.push(`${where}: duplicate test key`);
+    tKeys.add(t.key);
+    if (!t.title) errors.push(`${where}: missing title`);
+    if (!Number.isInteger(t.minutes) || t.minutes <= 0) errors.push(`${where}: minutes must be a positive integer`);
+    const qs = t.questions || [], perDomain = {};
+    if (!qs.length) errors.push(`${where}: no questions`);
+    qs.forEach((q, i) => {
+      const at = `${where} question ${i + 1}`;
+      if (!Array.isArray(q) || q.length !== 4) { errors.push(`${at}: must be [domain, question, options, explanation]`); return; }
+      const [domain, text, opts, why] = q;
+      mockQuestions++;
+      if (!cert.domains.some((d) => d.key === domain)) errors.push(`${at}: unknown domain "${domain}"`);
+      perDomain[domain] = (perDomain[domain] || 0) + 1;
+      if (!text || !why) errors.push(`${at}: missing question or explanation`);
+      if (seenQ.has(text)) errors.push(`${at}: question is repeated in another ${certKey} test`);
+      seenQ.add(text);
+      if (!Array.isArray(opts) || opts.length !== 4 || opts.some((o) => !o || typeof o !== "string")) errors.push(`${at}: needs four options`);
+      else if (new Set(opts).size !== 4) errors.push(`${at}: options must be distinct`);
+      for (const s of [text, why].concat(Array.isArray(opts) ? opts : [])) {
+        if (typeof s === "string" && (s.split("`").length % 2 === 0 || /[*|]/.test(s.replace(/`[^`]*`/g, "")))) errors.push(`${at}: unbalanced backticks, or * or | outside code`);
+      }
+    });
+    for (const d of cert.domains) {
+      const want = Math.round(d.weight / 100 * qs.length);
+      if ((perDomain[d.key] || 0) !== want) errors.push(`${where}: domain "${d.key}" has ${perDomain[d.key] || 0} questions, expected ${want} (${d.weight}% of ${qs.length})`);
+    }
+  }
+}
 // Every guide file must be loaded by the page, and vice versa.
 const html = fs.readFileSync(path.join(__dirname, "../index.html"), "utf8");
 const loaded = (html.match(/assets\/js\/docs\/[^"]+\.js/g) || []).map((p) => path.basename(p)).sort();
 if (loaded.join() !== docFiles.join()) errors.push(`index.html loads [${loaded}] but assets/js/docs has [${docFiles}]`);
+const loadedMocks = (html.match(/assets\/js\/mocks\/[^"]+\.js/g) || []).map((p) => path.basename(p)).sort();
+if (loadedMocks.join() !== mockFiles.join()) errors.push(`index.html loads mocks [${loadedMocks}] but assets/js/mocks has [${mockFiles}]`);
 
 if (errors.length) {
   console.error(errors.join("\n"));
   process.exit(1);
 }
 const items = Object.values(DATA.certs).reduce((s, c) => s + c.domains.reduce((n, d) => n + d.items.length, 0), 0);
-console.log(`OK: ${Object.keys(DATA.certs).length} certs, ${items} checklist items, ${DATA.cheats.length} cheat sections, ${DATA.flashcards.length} flashcards, ${topicCount} guide topics (${Object.keys(DATA.docs).join(", ") || "none"})`);
+console.log(`OK: ${Object.keys(DATA.certs).length} certs, ${items} checklist items, ${DATA.cheats.length} cheat sections, ${DATA.flashcards.length} flashcards, ${mockQuestions} mock questions, ${topicCount} guide topics (${Object.keys(DATA.docs).join(", ") || "none"})`);

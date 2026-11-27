@@ -19,13 +19,14 @@ flashcards, so everything needed to prepare is in one place:
   tables, diagrams, YAML examples, exam tips and self-test questions. Topics are searchable, can be
   linked to directly (`#kcna/learn/fund/pods`) and show the checklist items they cover, so reading
   and tracking happen in the same place. All three certifications are covered: KCNA (4 domains,
-  35 topics), KCSA (6 domains, 40 topics) and CKA (5 domains, 36 topics). The CKA guide is
+  36 topics), KCSA (6 domains, 40 topics) and CKA (5 domains, 36 topics). The CKA guide is
   command-oriented, with step-by-step procedures and worked troubleshooting examples.
 - **Domain trackers** — every exam domain with its weight, progress bar and points earned.
-- **Interactive checklists** — 126 study items, filterable by domain, priority, study week and free text. State is saved to `localStorage`.
+- **Interactive checklists** — 128 study items, filterable by domain, priority, study week and free text. State is saved to `localStorage`.
 - **Exam readiness calculator** — a weighted score per certification, compared against the pass mark.
 - **CLI cheat sheet** — searchable, copy-to-clipboard commands for `kubectl`, `kubeadm`, `etcdctl`, `crictl` and security tooling (Trivy, kube-bench, kubescape, Cosign, Falco).
 - **Flashcards** — flip-animated cards for concepts, definitions and commands, with shuffle, "mark as known" and keyboard shortcuts (`Space`, `←`, `→`, `K`).
+- **Mock tests** — timed practice in the exam format. KCNA has two tests of 60 questions each, split across the domains by exam weight, with a 90-minute countdown, question flagging, a score against the pass mark, a per-domain breakdown and an explained review of every answer. A test in progress survives a page reload.
 - **Resources** — curated free and open-source courses, repositories, labs and references for each certification.
 - Light and dark themes, mobile layout, progress export/import as JSON.
 
@@ -58,6 +59,7 @@ Finishing all items in a 30% domain earns 30 points; half of them earns 15. The 
 │       ├── theme.js            # Applies the saved theme before first paint
 │       ├── data.js             # Certs, domains, weights, checklist items, commands, flashcards, resources
 │       ├── docs/               # Study guide: one file per certification domain (kcna-fund.js, …)
+│       ├── mocks/              # Mock tests: one file per certification (kcna.js)
 │       └── app.js              # State, routing, Markdown rendering, views, events
 ├── scripts/validate-data.js    # Content sanity checks (weights, guide coverage, Markdown, etc.)
 ├── docs/                       # Study guides, resource lists and setup guide
@@ -83,6 +85,18 @@ line, `-` and `1.` lists, `| tables |`, fenced code blocks, `>` callouts, and in
 Files are named `<cert>-<domain key>.js`. To add a guide for another certification, create one
 file for each of its domains and add the `<script>` tags to `index.html`. The validator checks that every domain has
 a guide, that every checklist item is covered by a topic and that the Markdown is well formed.
+
+### Editing mock tests
+
+Each file in [`assets/js/mocks/`](assets/js/mocks/) holds the tests for one certification. A
+question is a `[domain key, question, [four options], explanation]` tuple, and **the first option
+is the correct answer** — the app shuffles the options and the question order on every attempt. A
+test must have the number of questions per domain that the exam weights give for its size (for a
+60-question KCNA test: 26 / 17 / 10 / 7); the validator checks this. To add tests for another
+certification, create `assets/js/mocks/<cert>.js` and add its `<script>` tag to `index.html`.
+
+Mock test scores are stored in the browser like the rest of the progress, but they are not part of
+the progress export.
 
 After editing, run:
 

@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var KEY = { done: "cncf-dash:v1:done", known: "cncf-dash:v1:known", ui: "cncf-dash:v1:ui" };
-  var VIEWS = [["overview", "Overview"], ["learn", "Study Guide"], ["checklist", "Checklist"], ["cheats", "Cheat Sheet"], ["flashcards", "Flashcards"], ["resources", "Resources"]];
+  var KEY = { done: "cncf-dash:v1:done", known: "cncf-dash:v1:known", ui: "cncf-dash:v1:ui", mock: "cncf-dash:v1:mock", mockHist: "cncf-dash:v1:mock-hist" };
+  var VIEWS = [["overview", "Overview"], ["learn", "Study Guide"], ["checklist", "Checklist"], ["cheats", "Cheat Sheet"], ["flashcards", "Flashcards"], ["mock", "Mock Test"], ["resources", "Resources"]];
   var PRIORITY_RANK = { high: 0, medium: 1, low: 2 };
   var MAX_IMPORT_BYTES = 1024 * 1024;
 
@@ -36,6 +36,15 @@
   });
   function fcId(card) { return card.cert + ":" + card.q; }
   DATA.flashcards.forEach(function (c) { CARD_IDS.add(fcId(c)); });
+  // Mock tests: turn question tuples into objects. The first option is the correct one.
+  var MOCKS = DATA.mocks || {};
+  Object.keys(MOCKS).forEach(function (certKey) {
+    MOCKS[certKey].forEach(function (t) {
+      t.questions = t.questions.map(function (q) { return { domain: q[0], q: q[1], o: q[2], why: q[3] }; });
+    });
+  });
+  function mockTests(certKey) { return own(MOCKS, certKey) && own(DATA.certs, certKey) ? MOCKS[certKey] : []; }
+  function findTest(certKey, key) { return mockTests(certKey).filter(function (t) { return t.key === key; })[0] || null; }
 
   // ---------- storage ----------
   // Saved state is untrusted: it may be missing, corrupt, stale, or written by another page on
@@ -64,6 +73,45 @@
     return v && typeof v === "object" && !Array.isArray(v) ? v : {};
   }
 
+  // A saved mock test run is only resumed if it still fits the current question bank.
+  function isPerm(a, n) {
+    if (!Array.isArray(a) || a.length !== n) return false;
+    var seen = {};
+    return a.every(function (v) {
+      if (!Number.isInteger(v) || v < 0 || v >= n || seen[v]) return false;
+      seen[v] = true;
+      return true;
+    });
+  }
+  function loadRun() {
+    var v = read(KEY.mock);
+    if (!v || typeof v !== "object" || typeof v.cert !== "string" || typeof v.test !== "string") return null;
+    var t = findTest(v.cert, v.test);
+    if (!t) return null;
+    var qs = t.questions, n = qs.length;
+    if (!isPerm(v.order, n) || !Array.isArray(v.opts) || v.opts.length !== n || !Array.isArray(v.answers) ||
+        v.answers.length !== n || !Array.isArray(v.flags) || v.flags.length !== n) return null;
+    for (var i = 0; i < n; i++) {
+      var a = v.answers[i];
+      if (!isPerm(v.opts[i], qs[i].o.length)) return null;
+      if (a !== null && !(Number.isInteger(a) && a >= 0 && a < qs[i].o.length)) return null;
+    }
+    if (typeof v.startedAt !== "number" || typeof v.endsAt !== "number" || !isFinite(v.startedAt) || !isFinite(v.endsAt)) return null;
+    var pos = Number.isInteger(v.pos) && v.pos >= 0 && v.pos < n ? v.pos : 0;
+    return { cert: v.cert, test: v.test, order: v.order, opts: v.opts, answers: v.answers, flags: v.flags.map(Boolean), startedAt: v.startedAt, endsAt: v.endsAt, pos: pos };
+  }
+  function loadHist() {
+    var v = read(KEY.mockHist), out = {};
+    if (!v || typeof v !== "object" || Array.isArray(v)) return out;
+    Object.keys(v).forEach(function (id) {
+      var p = id.split(":"), h = v[id];
+      var ok = function (x) { return Number.isInteger(x) && x >= 0 && x <= 100; };
+      if (p.length !== 2 || !findTest(p[0], p[1]) || !h || typeof h !== "object") return;
+      if (ok(h.best) && ok(h.last) && Number.isInteger(h.attempts) && h.attempts > 0) out[id] = { best: h.best, last: h.last, attempts: h.attempts };
+    });
+    return out;
+  }
+
   var ui = loadUi();
   var state = {
     cert: typeof ui.cert === "string" && own(DATA.certs, ui.cert) ? ui.cert : "kcna",
@@ -73,7 +121,8 @@
     filters: { domain: "all", priority: "all", week: "all", q: "", hideDone: false },
     doc: { domain: null, topic: null, q: "" },
     cheat: { tool: "all", q: "" },
-    fc: { type: "all", hideKnown: false, index: 0, flipped: false, order: null }
+    fc: { type: "all", hideKnown: false, index: 0, flipped: false, order: null },
+    mock: { run: loadRun(), result: null, onlyWrong: false, hist: loadHist() }
   };
 
   function currentTheme() {
@@ -83,6 +132,8 @@
   function saveUi() { return save(KEY.ui, { cert: state.cert, view: state.view, theme: currentTheme() }); }
   function saveDone() { return save(KEY.done, Array.from(state.done)); }
   function saveKnown() { return save(KEY.known, Array.from(state.known)); }
+  function saveRun() { return save(KEY.mock, state.mock.run); }
+  function saveHist() { return save(KEY.mockHist, state.mock.hist); }
 
   function domainStats(d) {
     var done = d.items.filter(function (it) { return state.done.has(it.id); }).length;
@@ -232,7 +283,8 @@
             '<div class="stack">' +
               '<p class="verdict ' + verdict[0] + '">' + verdict[1] + '</p>' +
               '<p class="muted small">Weighted score = Σ (completed ÷ total items in a domain) × domain weight. ' +
-              'It measures how much of the syllabus you have ticked off — not a predicted exam result. Use timed mock exams to judge that.</p>' +
+              'It measures how much of the syllabus you have ticked off — not a predicted exam result. Use a timed ' +
+              '<button type="button" class="link" data-view="mock">mock test</button> to judge that.</p>' +
               '<p class="small num">' + totalDone + ' of ' + total + ' checklist items complete</p>' +
             '</div>' +
           '</div>' +
@@ -511,6 +563,175 @@
       '<p class="fc-hint small muted"><kbd>Space</kbd> flip · <kbd>←</kbd> <kbd>→</kbd> navigate · <kbd>K</kbd> mark known</p></div>';
   }
 
+  // ---------- mock tests ----------
+  // A run keeps, per question: the shuffled option order and the chosen option (as its index in
+  // the question's own option list, where 0 is the correct answer). The deadline is a wall-clock
+  // time, so the countdown survives a reload.
+  function shuffled(n) {
+    var a = [], i, j, tmp;
+    for (i = 0; i < n; i++) a.push(i);
+    for (i = n - 1; i > 0; i--) { j = Math.floor(Math.random() * (i + 1)); tmp = a[i]; a[i] = a[j]; a[j] = tmp; }
+    return a;
+  }
+  function fmtTime(sec) {
+    sec = Math.max(0, Math.round(sec));
+    var m = Math.floor(sec / 60), s = sec % 60;
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+  function domainName(cert, key) {
+    var d = cert.domains.filter(function (x) { return x.key === key; })[0];
+    return d ? d.name : key;
+  }
+  function mockStart(testKey) {
+    var m = state.mock, t = findTest(state.cert, testKey);
+    if (!t || m.run) return;
+    var n = t.questions.length, now = Date.now();
+    m.result = null; m.onlyWrong = false;
+    m.run = {
+      cert: state.cert, test: t.key, order: shuffled(n),
+      opts: t.questions.map(function (q) { return shuffled(q.o.length); }),
+      answers: t.questions.map(function () { return null; }),
+      flags: t.questions.map(function () { return false; }),
+      startedAt: now, endsAt: now + t.minutes * 60000, pos: 0
+    };
+    saveRun();
+  }
+  function mockFinish(timedOut) {
+    var m = state.mock, run = m.run;
+    if (!run) return;
+    var t = findTest(run.cert, run.test), cert = DATA.certs[run.cert];
+    var correct = 0, by = {};
+    t.questions.forEach(function (q, i) {
+      var b = by[q.domain] || (by[q.domain] = { right: 0, total: 0 });
+      b.total++;
+      if (run.answers[i] === 0) { b.right++; correct++; }
+    });
+    var total = t.questions.length, score = Math.floor(correct / total * 100 + 1e-6);
+    var id = run.cert + ":" + run.test, h = m.hist[id];
+    m.hist[id] = { best: h ? Math.max(h.best, score) : score, last: score, attempts: h ? h.attempts + 1 : 1 };
+    m.result = {
+      cert: run.cert, test: run.test, order: run.order, opts: run.opts, answers: run.answers,
+      correct: correct, total: total, score: score, passed: correct / total * 100 >= cert.passMark, by: by,
+      seconds: Math.min(Date.now(), run.endsAt) - run.startedAt > 0 ? (Math.min(Date.now(), run.endsAt) - run.startedAt) / 1000 : 0,
+      timedOut: !!timedOut
+    };
+    m.run = null; m.onlyWrong = false;
+    saveRun(); saveHist();
+    render();
+    if (timedOut) toast("Time is up — the mock test was submitted");
+  }
+  var mockTimer = null;
+  function mockTick() {
+    var run = state.mock.run;
+    if (!run) return;
+    var left = Math.ceil((run.endsAt - Date.now()) / 1000);
+    if (left <= 0) { mockFinish(true); return; }
+    var el = $("#mockTimer");
+    if (el) { el.textContent = fmtTime(left); el.classList.toggle("low", left <= 300); }
+  }
+  function syncMockTimer() {
+    if (state.mock.run && !mockTimer) mockTimer = setInterval(mockTick, 1000);
+    else if (!state.mock.run && mockTimer) { clearInterval(mockTimer); mockTimer = null; }
+  }
+  function mockCellClass(run, pos) {
+    var qi = run.order[pos];
+    return "mock-cell num" + (run.answers[qi] !== null ? " answered" : "") + (run.flags[qi] ? " flagged" : "");
+  }
+  function mockCellLabel(run, pos) {
+    var qi = run.order[pos];
+    return "Question " + (pos + 1) + (run.answers[qi] !== null ? ", answered" : ", not answered") + (run.flags[qi] ? ", flagged" : "");
+  }
+  function mockCountText(run) {
+    var answered = run.answers.filter(function (a) { return a !== null; }).length;
+    return "Question " + (run.pos + 1) + " of " + run.order.length + " · " + answered + " answered";
+  }
+  // Answering or flagging updates the page in place, so the chosen radio keeps keyboard focus.
+  function mockSyncCell() {
+    var run = state.mock.run, cell = $('[data-mock-go="' + run.pos + '"]'), count = $("#mockCount");
+    if (cell) { cell.className = mockCellClass(run, run.pos); cell.setAttribute("aria-label", mockCellLabel(run, run.pos)); }
+    if (count) count.textContent = mockCountText(run);
+  }
+  function mockRunView() {
+    var run = state.mock.run, t = findTest(run.cert, run.test);
+    var n = run.order.length, qi = run.order[run.pos], q = t.questions[qi];
+    var left = Math.ceil((run.endsAt - Date.now()) / 1000);
+    return '<div class="mock">' +
+      '<div class="card mock-head"><div><h2>' + esc(t.title) + '</h2><p class="small muted num" id="mockCount">' + esc(mockCountText(run)) + '</p></div>' +
+        '<div class="mock-clock"><span class="small muted">Time left</span><b id="mockTimer" class="num' + (left <= 300 ? " low" : "") + '" role="timer">' + fmtTime(left) + '</b></div></div>' +
+      '<section class="card mock-q"><fieldset><legend class="mock-text"><span class="small muted">Question ' + (run.pos + 1) + '</span>' + inline(q.q) + '</legend>' +
+        run.opts[qi].map(function (oi) {
+          return '<label class="mock-opt"><input type="radio" name="mockOpt" data-mock-opt="' + oi + '"' + (run.answers[qi] === oi ? " checked" : "") + '><span>' + inline(q.o[oi]) + '</span></label>';
+        }).join("") + '</fieldset>' +
+        '<label class="mock-flag small"><input type="checkbox" data-mock-flag' + (run.flags[qi] ? " checked" : "") + '> Flag this question to come back to it</label></section>' +
+      '<div class="mock-nav"><button class="btn ghost" type="button" data-mock-nav="-1"' + (run.pos === 0 ? " disabled" : "") + '>← Previous</button>' +
+        '<button class="btn ghost" type="button" data-mock-nav="1"' + (run.pos === n - 1 ? " disabled" : "") + '>Next →</button>' +
+        '<button class="btn" type="button" data-mock-submit>Submit test</button></div>' +
+      '<nav class="mock-grid" aria-label="All questions">' + run.order.map(function (_, pos) {
+        return '<button type="button" class="' + mockCellClass(run, pos) + '" data-mock-go="' + pos + '" aria-label="' + mockCellLabel(run, pos) + '"' +
+          (pos === run.pos ? ' aria-current="true"' : "") + '>' + (pos + 1) + '</button>';
+      }).join("") + '</nav>' +
+      '<p class="small muted">Filled boxes are answered; a dot marks a flagged question. The test is submitted automatically when the time runs out. ' +
+        '<button class="link danger" type="button" data-mock-quit>Abandon this test</button></p>' +
+    '</div>';
+  }
+  function mockResultView(cert) {
+    var m = state.mock, r = m.result, t = findTest(r.cert, r.test);
+    var rows = r.order.map(function (qi, pos) { return { qi: qi, pos: pos, q: t.questions[qi], a: r.answers[qi] }; });
+    var shown = rows.filter(function (x) { return !m.onlyWrong || x.a !== 0; });
+    return '<div class="mock">' +
+      '<section class="card"><h2>' + esc(t.title) + ' — result</h2>' +
+        '<p class="mock-score"><b class="num">' + r.score + '%</b> <span class="verdict ' + (r.passed ? "good" : "bad") + '">' +
+          (r.passed ? "Pass" : "Below the pass mark") + '</span></p>' +
+        '<p class="small muted num">' + r.correct + ' of ' + r.total + ' correct · pass mark ' + cert.passMark + '% · time used ' + fmtTime(r.seconds) +
+          (r.timedOut ? ' (time ran out)' : '') + '</p>' +
+        '<div class="mock-domains">' + cert.domains.map(function (d) {
+          var b = r.by[d.key];
+          if (!b) return "";
+          return '<div><div class="row"><span>' + esc(d.name) + ' <span class="small muted num">' + d.weight + '%</span></span>' +
+            '<span class="small num">' + b.right + ' / ' + b.total + (d.doc ? ' · <button class="link" type="button" data-doc="' + esc(d.key) + '">Study</button>' : '') + '</span></div>' +
+            bar(b.right / b.total * 100) + '</div>';
+        }).join("") + '</div>' +
+        '<p class="doc-actions"><button class="btn" type="button" data-mock-start="' + esc(t.key) + '">Take it again</button> ' +
+          '<button class="btn ghost" type="button" data-mock-back>All mock tests</button></p></section>' +
+      '<div class="section-head"><h2>Review</h2><label class="small"><input type="checkbox" data-mock-wrong' + (m.onlyWrong ? " checked" : "") +
+        '> Only incorrect and unanswered (' + (r.total - r.correct) + ')</label></div>' +
+      (shown.length ? '<ol class="mock-review">' + shown.map(function (x) {
+        var state3 = x.a === 0 ? ["low", "Correct"] : x.a === null ? ["medium", "Not answered"] : ["high", "Incorrect"];
+        return '<li class="card"><p class="mock-meta small muted"><span class="num">Question ' + (x.pos + 1) + '</span><span class="badge">' + esc(domainName(cert, x.q.domain)) +
+          '</span><span class="badge ' + state3[0] + '">' + state3[1] + '</span></p>' +
+          '<p class="mock-text">' + inline(x.q.q) + '</p><ul class="mock-answers">' + r.opts[x.qi].map(function (oi) {
+            var right = oi === 0, mine = x.a === oi;
+            return '<li class="' + (right ? "right" : mine ? "wrong" : "") + '">' + inline(x.q.o[oi]) +
+              (right ? '<span class="mark">Correct answer' + (mine ? " · your answer" : "") + '</span>' : mine ? '<span class="mark">Your answer</span>' : "") + '</li>';
+          }).join("") + '</ul><p class="callout">' + inline(x.q.why) + '</p></li>';
+      }).join("") + '</ol>' : '<p class="empty card">Every question was answered correctly.</p>') +
+    '</div>';
+  }
+  function renderMock(cert) {
+    var m = state.mock, tests = mockTests(cert.key);
+    if (m.run && m.run.cert === cert.key) return mockRunView();
+    if (m.result && m.result.cert === cert.key) return mockResultView(cert);
+    var busy = m.run ? '<p class="note">A ' + esc(DATA.certs[m.run.cert].name) + ' mock test is in progress and its clock is running. ' +
+      '<button class="link" type="button" data-cert="' + esc(m.run.cert) + '">Go back to it</button></p>' : "";
+    if (!tests.length) {
+      return '<div class="mock">' + busy + '<div class="card empty"><h2>' + esc(cert.name) + ' mock tests</h2>' +
+        '<p>There is no mock test for ' + esc(cert.name) + ' yet. Until then, use the ' +
+        '<button type="button" class="link" data-view="flashcards">flashcards</button> and the ' +
+        '<button type="button" class="link" data-view="resources">resources</button>.</p></div></div>';
+    }
+    return '<div class="mock"><h2 class="sr-only">' + esc(cert.name) + ' mock tests</h2>' + busy +
+      '<p class="muted">Timed practice in the format of the real exam: ' + esc(cert.format.toLowerCase()) + ', ' + esc(cert.duration) + ', pass mark ' + cert.passMark +
+      '%. Questions are split across the domains by exam weight, and their order and the order of the answers change on every attempt. ' +
+      'They are written for this project and are not real exam questions.</p>' +
+      tests.map(function (t) {
+        var h = m.hist[cert.key + ":" + t.key];
+        return '<section class="card mock-test"><div><h3>' + esc(t.title) + '</h3>' +
+          '<p class="small muted num">' + t.questions.length + ' questions · ' + t.minutes + ' minutes</p>' +
+          '<p class="small num">' + (h ? 'Best ' + h.best + '% · last ' + h.last + '% · ' + plural(h.attempts, "attempt") : 'Not attempted yet') + '</p></div>' +
+          '<button class="btn" type="button" data-mock-start="' + esc(t.key) + '"' + (m.run ? " disabled" : "") + '>Start</button></section>';
+      }).join("") + '</div>';
+  }
+
   // ---------- resources ----------
   function renderResources(cert) {
     return '<p class="muted">Free and open-source study material for ' + esc(cert.name) +
@@ -537,8 +758,10 @@
       : state.view === "checklist" ? renderChecklist(cert)
       : state.view === "cheats" ? renderCheats()
       : state.view === "resources" ? renderResources(cert)
+      : state.view === "mock" ? renderMock(cert)
       : renderFlashcards(cert);
     applyWidths(main);
+    syncMockTimer();
     var page = VIEWS.filter(function (v) { return v[0] === state.view; })[0][1];
     if (state.view === "learn" && hasDocs(cert)) {
       var cur = currentDoc(cert);
@@ -672,6 +895,24 @@
       DATA.flashcards.forEach(function (c) { if (c.cert === state.cert) state.known.delete(fcId(c)); });
       saveKnown();
       state.fc.index = 0; state.fc.hideKnown = false; render();
+    } else if (d.mockStart) {
+      mockStart(d.mockStart); render(); window.scrollTo(0, 0);
+    } else if (d.mockNav || d.mockGo) {
+      var run = state.mock.run;
+      if (!run) return;
+      var pos = d.mockGo ? Number(d.mockGo) : run.pos + Number(d.mockNav);
+      if (!Number.isInteger(pos) || pos < 0 || pos >= run.order.length) return;
+      run.pos = pos; saveRun(); render();
+    } else if ("mockSubmit" in d) {
+      if (!state.mock.run) return;
+      var open = state.mock.run.answers.filter(function (a) { return a === null; }).length;
+      if (!confirm("Submit the test now?" + (open ? " " + plural(open, "question") + " " + (open === 1 ? "is" : "are") + " not answered." : ""))) return;
+      mockFinish(false); window.scrollTo(0, 0);
+    } else if ("mockQuit" in d) {
+      if (!state.mock.run || !confirm("Abandon this test? Your answers will be discarded and no result is recorded.")) return;
+      state.mock.run = null; saveRun(); render(); window.scrollTo(0, 0);
+    } else if ("mockBack" in d) {
+      state.mock.result = null; render(); window.scrollTo(0, 0);
     } else if (t.id === "themeBtn") {
       var dark = currentTheme() ? currentTheme() === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
       document.documentElement.dataset.theme = dark ? "light" : "dark";
@@ -681,9 +922,10 @@
     } else if (t.id === "importBtn") {
       $("#importInput").click();
     } else if (t.id === "resetBtn") {
-      if (!confirm("Clear all checklist progress and known flashcards for every certification? This cannot be undone.")) return;
+      if (!confirm("Clear all checklist progress, known flashcards and mock test results for every certification? This cannot be undone.")) return;
       state.done.clear(); state.known.clear();
-      saveDone(); saveKnown();
+      state.mock.run = null; state.mock.result = null; state.mock.hist = {};
+      saveDone(); saveKnown(); saveRun(); saveHist();
       render();
       toast("Progress reset");
     }
@@ -711,6 +953,21 @@
     } else if (d.filter && t.type !== "search") {
       state.filters[d.filter] = t.type === "checkbox" ? t.checked : t.value;
       render();
+    } else if (d.mockOpt || "mockFlag" in d) {
+      var mr = state.mock.run;
+      if (!mr) return;
+      var mq = mr.order[mr.pos];
+      if (d.mockOpt) {
+        var choice = Number(d.mockOpt);
+        if (!Number.isInteger(choice) || choice < 0 || choice >= mr.opts[mq].length) return;
+        mr.answers[mq] = choice;
+      } else {
+        mr.flags[mq] = t.checked;
+      }
+      saveRun(); mockSyncCell();
+      return;
+    } else if ("mockWrong" in d) {
+      state.mock.onlyWrong = t.checked; render();
     } else if ("fcHide" in d) {
       state.fc.hideKnown = t.checked; state.fc.index = 0; state.fc.flipped = false; render();
     } else if (t.id === "importInput") {
@@ -796,4 +1053,5 @@
 
   applyHash();
   render();
+  mockTick(); // submits a saved run whose time ran out while the page was closed
 })();
