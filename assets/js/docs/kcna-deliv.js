@@ -14,7 +14,7 @@
       body: [
         "**GitOps** is a way of operating systems in which the complete desired state is stored in Git and software agents keep the running system in line with it. It applies the Kubernetes idea of reconciliation to delivery as a whole.",
         "## The four principles",
-        "The OpenGitOps project (a CNCF working group) defines GitOps with four principles:",
+        "The OpenGitOps project (a CNCF Sandbox project, started by the CNCF GitOps Working Group) defines GitOps with four principles:",
         "| Principle | Meaning |",
         "|---|---|",
         "| **1. Declarative** | The desired state of the system is expressed declaratively, not as a list of steps |",
@@ -102,7 +102,7 @@
         "Two related terms:",
         "- **Idempotent:** applying the same definition many times gives the same result. Declarative tools are idempotent.",
         "- **Immutable infrastructure:** servers and containers are never modified after they are created. To change one, you build a new version and replace the old one. This removes drift and makes rollback simple.",
-        "**Crossplane** (CNCF) brings IaC into Kubernetes: cloud resources are defined as custom resources and reconciled by controllers. Kubernetes manifests are themselves IaC for applications, which is why IaC and GitOps fit together well.",
+        "**Crossplane** (CNCF graduated) brings IaC into Kubernetes: cloud resources are defined as custom resources and reconciled by controllers. Kubernetes manifests are themselves IaC for applications, which is why IaC and GitOps fit together well.",
         "> **Exam tip:** continuous *delivery* stops before production and waits for approval. Continuous *deployment* goes all the way automatically."
       ],
       quiz: [
@@ -151,7 +151,7 @@
         "| `helm list` | Show releases |",
         "| `helm template ./mychart` | Render the manifests locally without installing |",
         "| `helm uninstall web` | Remove a release |",
-        "Helm 3 has no server-side component. It talks to the API server directly and stores release information as Secrets in the release's namespace. (Helm 2 used an in-cluster component called Tiller, which was removed.)",
+        "Helm has had no server-side component since Helm 3 (the current major version is Helm 4). It talks to the API server directly and stores release information as Secrets in the release's namespace. (Helm 2 used an in-cluster component called Tiller, which was removed.)",
         "## Kustomize",
         "**Kustomize** customises plain YAML without templates. You keep a **base** of ordinary manifests and write **overlays** that patch it for each environment. It is built into `kubectl`.",
         "```",
@@ -196,7 +196,7 @@
         ["What is a Helm chart, and what is a release?", "A chart is a package of templated Kubernetes manifests with default values. A release is one installed instance of a chart in a cluster."],
         ["How does Kustomize differ from Helm in approach?", "Kustomize uses no templates. It applies patches and overlays to plain YAML manifests. Helm renders templates using values."],
         ["Which `kubectl` flag applies a Kustomize directory?", "`-k`, as in `kubectl apply -k ./overlays/prod`."],
-        ["Does Helm 3 need a component installed in the cluster?", "No. Tiller was removed in Helm 3; the client talks directly to the Kubernetes API."]
+        ["Does a current version of Helm need a component installed in the cluster?", "No. Tiller was removed in Helm 3, and since then the client talks directly to the Kubernetes API."]
       ]
     },
     {
