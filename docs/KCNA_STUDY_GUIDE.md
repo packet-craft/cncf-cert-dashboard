@@ -144,13 +144,19 @@ The routine is always the same: `kubectl get` to see the state, `kubectl describ
   | Cluster Autoscaler | Number of nodes |
   | KEDA | Replicas, driven by external events (queues, etc.), including to zero |
 
+  Since v1.37 the HPA can also scale to zero, but only on object and external metrics
+  (`minReplicas: 0`), not on CPU or memory.
+
 - **Serverless:** Knative (Serving and Eventing), CloudEvents as the event format standard.
 - **CNCF governance:** projects move **Sandbox → Incubating → Graduated**; the Technical Oversight
-  Committee (TOC) decides. Know TAGs (Technical Advisory Groups) and Kubernetes SIGs.
+  Committee (TOC) decides. Know what TAGs (Technical Advisory Groups) do and what Kubernetes SIGs are.
 - **Personas:** SRE, DevOps engineer, platform engineer, security engineer, cloud architect, data
   engineer — know what each is responsible for.
 - **Community and collaboration:** Kubernetes work is organised in SIGs (special interest groups)
   and working groups; substantial changes go through KEPs (Kubernetes Enhancement Proposals).
+  People take part through issues and pull requests, open SIG meetings, Slack and mailing lists,
+  KubeCon + CloudNativeCon and local community events. Kubernetes asks contributors to sign a CLA;
+  many other CNCF projects use the DCO (`Signed-off-by`).
 
 ### Observability
 
@@ -182,13 +188,18 @@ Know which category a project belongs to and roughly what it does.
 | Tracing / telemetry | Jaeger, OpenTelemetry |
 | GitOps / CD | Argo, Flux |
 | Packaging | Helm |
-| Registry | Harbor |
+| Registry | Harbor, Dragonfly |
 | Policy | Open Policy Agent, Kyverno |
 | Runtime security | Falco |
 | Serverless / eventing | Knative, KEDA, CloudEvents |
 | Supply chain | TUF, Notary, in-toto |
+| Certificates / identity | cert-manager, SPIFFE and SPIRE |
+| Infrastructure / platform | Crossplane, Backstage |
+| Application runtime / messaging | Dapr, NATS, gRPC |
+| Cost | OpenCost |
 
-Project maturity changes over time — check <https://landscape.cncf.io>.
+The dashboard's study guide lists the maturity level of each. Project maturity changes over time —
+check <https://landscape.cncf.io>.
 
 ## Four-week plan
 
