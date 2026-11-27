@@ -326,7 +326,7 @@ kbd { font: .8rem var(--mono); background: var(--surface-2); border: 1px solid v
 .prose h4 { font-size: 1rem; margin: 22px 0 0; }
 .prose ul, .prose ol { margin-bottom: 0; padding-left: 22px; }
 .prose li + li { margin-top: 6px; }
-.prose code, .quiz code {
+.prose code, .quiz code, .mock code {
   font: .86em var(--mono); background: var(--surface-2); border: 1px solid var(--border);
   border-radius: 5px; padding: 1px 5px; overflow-wrap: anywhere;
 }
@@ -370,6 +370,56 @@ kbd { font: .8rem var(--mono); background: var(--surface-2); border: 1px solid v
   opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; font-weight: 600; max-width: calc(100vw - 32px);
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- mock tests ---------- */
+.mock { max-width: 780px; margin: 0 auto; display: grid; gap: 16px; }
+.mock > .note { margin-top: 0; }
+.mock-test { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.mock-test p { margin-top: 4px; }
+.mock-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.mock-clock { display: grid; text-align: right; flex: none; }
+.mock-clock b { font-size: 1.5rem; line-height: 1.2; }
+.mock-clock b.low { color: var(--bad); }
+.mock-q fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.mock-text { padding: 0; font-size: 1.08rem; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+legend.mock-text { margin-bottom: 6px; }
+legend.mock-text > .small { display: block; font-weight: 400; margin-bottom: 4px; }
+.mock-opt {
+  display: flex; gap: 12px; align-items: flex-start; margin-top: 8px; padding: 12px 14px;
+  border: 1px solid var(--border); border-radius: 10px; cursor: pointer; overflow-wrap: anywhere;
+}
+.mock-opt:hover { background: var(--surface-2); }
+.mock-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.mock-opt input, .mock-flag input { width: 18px; height: 18px; margin: 3px 0 0; flex: none; accent-color: var(--accent); }
+.mock-flag { display: inline-flex; gap: 10px; align-items: flex-start; margin-top: 14px; cursor: pointer; }
+.mock-flag input { margin-top: 1px; }
+.mock-nav { display: flex; gap: 10px; flex-wrap: wrap; }
+.mock-nav .btn:last-child { margin-left: auto; }
+.mock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 6px; }
+.mock-cell {
+  position: relative; font: inherit; font-size: .85rem; padding: 8px 0; cursor: pointer;
+  background: var(--surface); color: var(--text); border: 1px solid var(--control-border); border-radius: 8px;
+}
+.mock-cell.answered { background: var(--accent-soft); border-color: var(--accent); }
+.mock-cell.flagged::after {
+  content: ""; position: absolute; top: 3px; right: 3px; width: 8px; height: 8px;
+  border-radius: 50%; background: var(--warn);
+}
+.mock-cell[aria-current="true"] { box-shadow: 0 0 0 2px var(--accent); font-weight: 700; }
+.mock-score { margin-top: 8px; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.mock-score b { font-size: 2.4rem; line-height: 1; }
+.mock-domains { display: grid; gap: 14px; margin-top: 18px; }
+.mock-domains .row { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 5px; flex-wrap: wrap; }
+.mock .section-head { margin: 8px 0 0; align-items: center; }
+.mock-review { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.mock-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.mock-answers { list-style: none; margin: 10px 0 12px; padding: 0; display: grid; gap: 6px; }
+.mock-answers li { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; overflow-wrap: anywhere; }
+.mock-answers .right { border-color: var(--good); border-width: 2px; }
+.mock-answers .wrong { border-color: var(--bad); border-width: 2px; }
+.mock-answers .mark { display: block; font-size: .8rem; font-weight: 700; margin-top: 2px; }
+.mock-answers .right .mark { color: var(--good); }
+.mock-answers .wrong .mark { color: var(--bad); }
 
 @media (max-width: 900px) {
   .learn { grid-template-columns: minmax(0, 1fr); gap: 16px; }
