@@ -543,6 +543,10 @@ const DATA = {
 
     { cert: "kcna", d: "fund", type: "concept", q: "Does a namespace restrict who can access the objects in it?", a: "Not by itself. A namespace separates names and is the unit for quotas and policies. Access is controlled by RBAC, and network isolation by NetworkPolicy." },
 
+    { cert: "kcna", d: "fund", type: "definition", q: "What are the four top-level fields of a Kubernetes manifest?", a: "apiVersion (the API group and version), kind (the type of object), metadata (name, namespace, labels) and spec (the desired state). Kubernetes adds status, the actual state." },
+    { cert: "kcna", d: "fund", type: "concept", q: "A Deployment's selector does not match the labels in its pod template. What happens?", a: "The API server rejects the Deployment. spec.selector must match spec.template.metadata.labels, so nothing is created." },
+    { cert: "kcna", d: "fund", type: "command", q: "Forward local port 8080 to port 80 of a pod for testing.", a: "kubectl port-forward pod/<pod> 8080:80   (also works with service/<name>; it is a debugging tool, not a Service type)" },
+
     // KCNA — Container Orchestration (28%)
     { cert: "kcna", d: "orch", type: "concept", q: "What are the rules of the Kubernetes network model?", a: "Every pod has its own IP address, and every pod can reach every other pod without NAT. Kubernetes does not implement this itself: a CNI plugin does." },
     { cert: "kcna", d: "orch", type: "concept", q: "Why do Services exist?", a: "Pods are replaced often and their IPs change. A Service gives a stable virtual IP and DNS name and load-balances across the pods that match its label selector." },
@@ -575,6 +579,8 @@ const DATA = {
     { cert: "kcna", d: "orch", type: "concept", q: "A Service does not respond. What do you check first?", a: "Whether it has endpoints. No endpoints means the selector matches no ready pods: compare the Service's selector with the pod labels and check the readiness probe. Then check port and targetPort." },
     { cert: "kcna", d: "orch", type: "command", q: "Show recent events in the current namespace, oldest first.", a: "kubectl get events --sort-by=.lastTimestamp" },
 
+    { cert: "kcna", d: "orch", type: "concept", q: "Service: port vs targetPort?", a: "port is where the Service listens on its cluster IP. targetPort is the port on the pods that the traffic is sent to. nodePort, for NodePort Services, is the port opened on every node." },
+
     // KCNA — Cloud Native Application Delivery (16%)
     { cert: "kcna", d: "deliv", type: "definition", q: "What are the four GitOps principles?", a: "Declarative (the desired state is described, not scripted), versioned and immutable (stored in Git), pulled automatically (agents fetch it) and continuously reconciled (drift is corrected)." },
     { cert: "kcna", d: "deliv", type: "concept", q: "Push vs pull deployment?", a: "Push: a CI pipeline outside the cluster runs kubectl or helm against it and needs cluster credentials. Pull: an agent inside the cluster fetches the desired state from Git and applies it. GitOps uses pull." },
@@ -590,6 +596,8 @@ const DATA = {
     { cert: "kcna", d: "deliv", type: "command", q: "Watch a rollout and list its past revisions.", a: "kubectl rollout status deployment/web   and   kubectl rollout history deployment/web" },
     { cert: "kcna", d: "deliv", type: "definition", q: "In which ways can a probe check a container?", a: "httpGet (an HTTP request), tcpSocket (open a port), exec (run a command in the container) and grpc (a gRPC health check)." },
     { cert: "kcna", d: "deliv", type: "command", q: "Show the logs of a container that has crashed and restarted.", a: "kubectl logs <pod> --previous   (add -c <container> in a multi-container pod)" },
+
+    { cert: "kcna", d: "deliv", type: "definition", q: "What is continuous integration (CI)?", a: "Developers merge small changes often, and every change is built and tested automatically, so problems are found early. Continuous delivery and deployment then take the tested build towards production." },
 
     // KCNA — Cloud Native Architecture (12%)
     { cert: "kcna", d: "arch", type: "definition", q: "How does the CNCF define cloud native?", a: "Technologies that let organisations build and run scalable applications in dynamic environments (public, private and hybrid clouds), using containers, service meshes, microservices, immutable infrastructure and declarative APIs." },
@@ -627,6 +635,9 @@ const DATA = {
     { cert: "kcna", d: "arch", type: "definition", q: "What does 'shift left' mean?", a: "Dealing with security (or testing) earlier in the development process, for example scanning images and checking policies in the pipeline and not just before release." },
 
     { cert: "kcna", d: "arch", type: "definition", q: "What is KubeCon + CloudNativeCon?", a: "The CNCF's flagship conference, held several times a year in different regions. Kubernetes Community Days are the smaller, locally organised events." },
+
+    { cert: "kcna", d: "arch", type: "concept", q: "How does the HPA calculate the number of replicas?", a: "desiredReplicas = ceil(currentReplicas x currentValue / targetValue). Example: 4 replicas at 100% CPU with a 50% target gives ceil(4 x 100 / 50) = 8." },
+    { cert: "kcna", d: "arch", type: "concept", q: "Monitoring vs observability?", a: "Monitoring watches known signals and alerts on thresholds set in advance. Observability is being able to work out what is happening inside a system from its metrics, logs and traces, including for problems nobody predicted." },
 
     // KCSA
     { cert: "kcsa", d: "overview", type: "definition", q: "What are the 4Cs of cloud native security?", a: "Cloud, Cluster, Container, Code. Each layer builds on the security of the layer outside it." },
