@@ -257,24 +257,21 @@ select, input[type="search"] {
 /* ---------- flashcards ---------- */
 .fc-wrap { max-width: 680px; margin: 0 auto; }
 .fc-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
-.flashcard {
-  display: block; width: 100%; height: 300px; padding: 0; border: 0; background: none;
-  perspective: 1200px; cursor: pointer; font: inherit; color: inherit;
-}
-.fc-inner { display: block; position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .5s cubic-bezier(.2, .7, .2, 1); }
-.flashcard.flipped .fc-inner { transform: rotateY(180deg); }
-.fc-face {
-  position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow);
-  display: flex; flex-direction: column; padding: 20px; text-align: left; overflow: auto;
-}
-.fc-back { transform: rotateY(180deg); border-color: var(--accent); }
-.fc-face .meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.fc-face .body { flex: 1; display: grid; place-content: center; font-size: 1.2rem; text-align: center; overflow-wrap: anywhere; padding: 8px 0; }
-.fc-back .body.command { font: .95rem/1.5 var(--mono); text-align: left; }
 .fc-domain { display: flex; align-items: center; gap: 8px; color: var(--muted); font-weight: 600; }
 .fc-domain select { max-width: 100%; }
-.fc-dom { flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fc-card fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.fc-card legend.mock-text { margin-bottom: 6px; }
+.fc-card .mock-opt .mark { display: block; font-size: .8rem; font-weight: 700; margin-top: 2px; }
+.fc-card .mock-opt:has(input:disabled) { cursor: default; }
+.fc-card .mock-opt:has(input:disabled):hover { background: none; }
+.fc-card .mock-opt.right { border-color: var(--good); border-width: 2px; background: none; }
+.fc-card .mock-opt.wrong { border-color: var(--bad); border-width: 2px; background: none; }
+.fc-card .mock-opt.right .mark { color: var(--good); }
+.fc-card .mock-opt.wrong .mark { color: var(--bad); }
+.fc-opt.command { font: .9rem/1.5 var(--mono); overflow-wrap: anywhere; }
+.fc-reveal { margin-top: 14px; }
+.fc-card .callout { margin-top: 14px; }
+.fc-card .callout .verdict { font-weight: 700; }
 .fc-controls { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
 .fc-hint { text-align: center; margin-top: 10px; }
 kbd { font: .8rem var(--mono); background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; }

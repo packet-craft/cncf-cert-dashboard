@@ -121,7 +121,9 @@
     filters: { domain: "all", priority: "all", week: "all", q: "", hideDone: false },
     doc: { domain: null, topic: null, q: "" },
     cheat: { tool: "all", q: "" },
-    fc: { type: "all", domain: "all", hideKnown: false, index: 0, flipped: false, order: null },
+    // picked: the option chosen per card; revealed: cards without options whose answer is shown;
+    // perm: the shuffled option order per card. All three last for the session only.
+    fc: { type: "all", domain: "all", hideKnown: false, index: 0, order: null, picked: {}, revealed: {}, perm: {} },
     mock: { run: loadRun(), result: null, onlyWrong: false, hist: loadHist() }
   };
 
@@ -548,27 +550,40 @@
       return '<div class="fc-wrap">' + head + '<p class="empty card">No cards left in this deck. ' +
         '<button class="link" type="button" data-fc-reset>Reset known cards for ' + esc(cert.name) + '</button></p></div>';
     }
-    var isKnown = state.known.has(fcId(card));
-    var knownBadge = isKnown ? '<span class="badge low">Known</span>' : "";
-    // The card's accessible name is its visible face; the hidden face is aria-hidden.
+    // A card with options is answered like an exam question: pick one of four, then see the
+    // right answer and the explanation. A card without options shows its answer on request.
+    var id = fcId(card), isKnown = state.known.has(id);
+    var picked = own(f.picked, id) ? f.picked[id] : null;
+    var done = card.o ? picked !== null : own(f.revealed, id);
+    var mono = card.type === "command" ? " command" : "";
+    var body;
+    if (card.o) {
+      if (!own(f.perm, id)) f.perm[id] = shuffled(card.o.length);
+      body = '<fieldset><legend class="mock-text">' + esc(card.q) + '</legend>' + f.perm[id].map(function (oi) {
+        var cls = !done ? "" : oi === 0 ? " right" : oi === picked ? " wrong" : "";
+        var mark = !done ? "" : oi === 0 ? '<span class="mark">Correct answer' + (picked === 0 ? " · your answer" : "") + '</span>'
+          : oi === picked ? '<span class="mark">Your answer</span>' : "";
+        return '<label class="mock-opt' + cls + '"><input type="radio" name="fcOpt" data-fc-opt="' + oi + '"' +
+          (picked === oi ? " checked" : "") + (done ? " disabled" : "") + '><span><span class="fc-opt' + mono + '">' + esc(card.o[oi]) + '</span>' + mark + '</span></label>';
+      }).join("") + '</fieldset>';
+    } else {
+      body = '<p class="mock-text">' + esc(card.q) + '</p>' +
+        (done ? "" : '<p class="fc-reveal"><button class="btn" type="button" data-fc-reveal>Show answer</button></p>');
+    }
+    var verdict = !card.o ? "" : picked === 0 ? '<strong class="verdict good">Correct.</strong> ' : '<strong class="verdict bad">Not quite.</strong> ';
     return '<div class="fc-wrap">' + head +
-      '<button class="flashcard' + (f.flipped ? " flipped" : "") + '" type="button" id="flashcard">' +
-        '<span class="fc-inner">' +
-          '<span class="fc-face fc-front" aria-hidden="' + f.flipped + '"><span class="meta"><span class="badge accent">' + cap(card.type) + '</span>' +
-            '<span class="small muted fc-dom">' + esc(domainName(cert, card.d)) + '</span>' + knownBadge + '<span class="small muted num">Card ' + (f.index + 1) + ' of ' + deck.length + '</span></span>' +
-            '<span class="body">' + esc(card.q) + '</span><span class="small muted">Question — select to flip</span></span>' +
-          '<span class="fc-face fc-back" aria-hidden="' + !f.flipped + '"><span class="meta"><span class="badge accent">Answer</span>' +
-            knownBadge + '</span>' +
-            '<span class="body' + (card.type === "command" ? " command" : "") + '">' + esc(card.a) + '</span></span>' +
-        '</span></button>' +
+      '<section class="card fc-card" id="flashcard"><p class="mock-meta small muted"><span class="num">Card ' + (f.index + 1) + ' of ' + deck.length + '</span>' +
+        '<span class="badge">' + esc(domainName(cert, card.d)) + '</span><span class="badge accent">' + cap(card.type) + '</span>' +
+        (isKnown ? '<span class="badge low">Known</span>' : "") + '</p>' + body +
+        '<div id="fcWhy" role="status">' + (done ? '<p class="callout">' + verdict + '<span class="' + (card.o ? "" : "fc-opt" + mono) + '">' + esc(card.a) + '</span></p>' : "") + '</div></section>' +
       '<div class="fc-controls">' +
         '<button class="btn ghost" type="button" data-fc-nav="-1">← Previous</button>' +
-        '<button class="btn" type="button" data-fc-flip>Flip</button>' +
-        '<button class="btn ghost" type="button" data-fc-nav="1">Next →</button>' +
+        '<button class="btn" type="button" data-fc-nav="1">Next →</button>' +
         '<button class="btn ghost" type="button" data-fc-known>' + (isKnown ? "Unmark known" : "Mark as known") + '</button>' +
+        (done ? '<button class="btn ghost" type="button" data-fc-retry>Try again</button>' : "") +
         '<button class="btn ghost" type="button" data-fc-shuffle>Shuffle</button>' +
       '</div>' +
-      '<p class="fc-hint small muted"><kbd>Space</kbd> flip · <kbd>←</kbd> <kbd>→</kbd> navigate · <kbd>K</kbd> mark known</p></div>';
+      '<p class="fc-hint small muted"><kbd>←</kbd> <kbd>→</kbd> navigate · <kbd>K</kbd> mark known</p></div>';
   }
 
   // ---------- mock tests ----------
@@ -840,17 +855,7 @@
     var n = fcDeck().length;
     if (!n) return;
     state.fc.index = (state.fc.index + step + n) % n;
-    state.fc.flipped = false;
     render();
-  }
-  function fcFlip() {
-    // Toggle in place so the CSS flip animation plays.
-    var el = $("#flashcard");
-    if (!el) return;
-    state.fc.flipped = !state.fc.flipped;
-    el.classList.toggle("flipped", state.fc.flipped);
-    $(".fc-front", el).setAttribute("aria-hidden", String(state.fc.flipped));
-    $(".fc-back", el).setAttribute("aria-hidden", String(!state.fc.flipped));
   }
   function fcToggleKnown() {
     var card = fcDeck()[state.fc.index];
@@ -858,8 +863,13 @@
     var id = fcId(card);
     if (state.known.has(id)) state.known.delete(id); else state.known.add(id);
     saveKnown();
-    state.fc.flipped = false;
     render();
+  }
+  // After a card is answered its options are disabled, so move keyboard focus on to "Next".
+  function fcAnswered() {
+    render();
+    var next = $('[data-fc-nav="1"]');
+    if (next) next.focus({ preventScroll: true });
   }
 
   // ---------- events ----------
@@ -870,7 +880,7 @@
 
     if (d.cert) {
       if (!own(DATA.certs, d.cert)) return;
-      state.cert = d.cert; resetFilters(); state.doc = { domain: null, topic: null, q: "" }; state.fc.index = 0; state.fc.flipped = false; state.fc.order = null; state.fc.domain = "all";
+      state.cert = d.cert; resetFilters(); state.doc = { domain: null, topic: null, q: "" }; state.fc.index = 0; state.fc.order = null; state.fc.domain = "all";
       saveUi(); render(); window.scrollTo(0, 0);
     } else if (d.view) {
       state.view = d.view; saveUi(); render(); window.scrollTo(0, 0);
@@ -890,20 +900,26 @@
         function () { toast("Copy failed — select the text manually"); }
       );
     } else if (d.fcOpen) {
-      state.view = "flashcards"; state.fc.domain = d.fcOpen; state.fc.type = "all"; state.fc.index = 0; state.fc.flipped = false;
+      state.view = "flashcards"; state.fc.domain = d.fcOpen; state.fc.type = "all"; state.fc.index = 0;
       saveUi(); render(); window.scrollTo(0, 0);
     } else if (d.fcType) {
-      state.fc.type = d.fcType; state.fc.index = 0; state.fc.flipped = false; render();
+      state.fc.type = d.fcType; state.fc.index = 0; render();
     } else if (d.fcNav) {
       fcMove(Number(d.fcNav));
-    } else if ("fcFlip" in d || t.id === "flashcard") {
-      fcFlip();
+    } else if ("fcReveal" in d || "fcRetry" in d) {
+      var fcCard = fcDeck()[state.fc.index];
+      if (!fcCard) return;
+      if ("fcReveal" in d) { state.fc.revealed[fcId(fcCard)] = true; fcAnswered(); return; }
+      delete state.fc.picked[fcId(fcCard)]; delete state.fc.revealed[fcId(fcCard)]; delete state.fc.perm[fcId(fcCard)];
+      render();
+      var first = $("[data-fc-opt], [data-fc-reveal]");
+      if (first) { first.focus({ preventScroll: true }); return; }
     } else if ("fcKnown" in d) {
       fcToggleKnown();
     } else if ("fcShuffle" in d) {
       var order = {};
       DATA.flashcards.forEach(function (c) { order[fcId(c)] = Math.random(); });
-      state.fc.order = order; state.fc.index = 0; state.fc.flipped = false; render();
+      state.fc.order = order; state.fc.index = 0; state.fc.picked = {}; state.fc.revealed = {}; state.fc.perm = {}; render();
       toast("Deck shuffled");
     } else if ("fcReset" in d) {
       DATA.flashcards.forEach(function (c) { if (c.cert === state.cert) state.known.delete(fcId(c)); });
@@ -982,10 +998,16 @@
       return;
     } else if ("mockWrong" in d) {
       state.mock.onlyWrong = t.checked; render();
+    } else if (d.fcOpt) {
+      var answered = fcDeck()[state.fc.index], choice2 = Number(d.fcOpt);
+      if (!answered || !answered.o || !Number.isInteger(choice2) || choice2 < 0 || choice2 >= answered.o.length) return;
+      state.fc.picked[fcId(answered)] = choice2;
+      fcAnswered();
+      return;
     } else if ("fcDomain" in d) {
-      state.fc.domain = t.value; state.fc.index = 0; state.fc.flipped = false; render();
+      state.fc.domain = t.value; state.fc.index = 0; render();
     } else if ("fcHide" in d) {
-      state.fc.hideKnown = t.checked; state.fc.index = 0; state.fc.flipped = false; render();
+      state.fc.hideKnown = t.checked; state.fc.index = 0; render();
     } else if (t.id === "importInput") {
       if (t.files[0]) importProgress(t.files[0]);
       t.value = "";
@@ -1028,7 +1050,6 @@
     if (e.key === "ArrowRight") { fcMove(1); restoreFocus(el); }
     else if (e.key === "ArrowLeft") { fcMove(-1); restoreFocus(el); }
     else if (e.key === "k" || e.key === "K") { fcToggleKnown(); restoreFocus(el); }
-    else if (e.key === " " && tag !== "BUTTON") { e.preventDefault(); fcFlip(); }
   });
 
   // Keep several open tabs in step instead of letting them overwrite each other.
