@@ -40,7 +40,7 @@
   var MOCKS = DATA.mocks || {};
   Object.keys(MOCKS).forEach(function (certKey) {
     MOCKS[certKey].forEach(function (t) {
-      t.questions = t.questions.map(function (q) { return { domain: q[0], q: q[1], o: q[2], why: q[3] }; });
+      t.questions = t.questions.map(function (q) { return { domain: q[0], q: q[1], o: q[2], why: q[3], code: q[4] || null }; });
     });
   });
   function mockTests(certKey) { return own(MOCKS, certKey) && own(DATA.certs, certKey) ? MOCKS[certKey] : []; }
@@ -659,6 +659,9 @@
     if (cell) { cell.className = mockCellClass(run, run.pos); cell.setAttribute("aria-label", mockCellLabel(run, run.pos)); }
     if (count) count.textContent = mockCountText(run);
   }
+  function mockCode(q) {
+    return q.code ? '<pre class="mock-code" tabindex="0"><code>' + esc(q.code.join("\n")) + '</code></pre>' : "";
+  }
   function mockRunView() {
     var run = state.mock.run, t = findTest(run.cert, run.test);
     var n = run.order.length, qi = run.order[run.pos], q = t.questions[qi];
@@ -666,7 +669,7 @@
     return '<div class="mock">' +
       '<div class="card mock-head"><div><h2>' + esc(t.title) + '</h2><p class="small muted num" id="mockCount">' + esc(mockCountText(run)) + '</p></div>' +
         '<div class="mock-clock"><span class="small muted">Time left</span><b id="mockTimer" class="num' + (left <= 300 ? " low" : "") + '" role="timer">' + fmtTime(left) + '</b></div></div>' +
-      '<section class="card mock-q"><fieldset><legend class="mock-text"><span class="small muted">Question ' + (run.pos + 1) + '</span>' + inline(q.q) + '</legend>' +
+      '<section class="card mock-q"><fieldset><legend class="mock-text"><span class="small muted">Question ' + (run.pos + 1) + '</span>' + inline(q.q) + '</legend>' + mockCode(q) +
         run.opts[qi].map(function (oi) {
           return '<label class="mock-opt"><input type="radio" name="mockOpt" data-mock-opt="' + oi + '"' + (run.answers[qi] === oi ? " checked" : "") + '><span>' + inline(q.o[oi]) + '</span></label>';
         }).join("") + '</fieldset>' +
@@ -707,7 +710,7 @@
         var state3 = x.a === 0 ? ["low", "Correct"] : x.a === null ? ["medium", "Not answered"] : ["high", "Incorrect"];
         return '<li class="card"><p class="mock-meta small muted"><span class="num">Question ' + (x.pos + 1) + '</span><span class="badge">' + esc(domainName(cert, x.q.domain)) +
           '</span><span class="badge ' + state3[0] + '">' + state3[1] + '</span></p>' +
-          '<p class="mock-text">' + inline(x.q.q) + '</p><ul class="mock-answers">' + r.opts[x.qi].map(function (oi) {
+          '<p class="mock-text">' + inline(x.q.q) + '</p>' + mockCode(x.q) + '<ul class="mock-answers">' + r.opts[x.qi].map(function (oi) {
             var right = oi === 0, mine = x.a === oi;
             return '<li class="' + (right ? "right" : mine ? "wrong" : "") + '">' + inline(x.q.o[oi]) +
               (right ? '<span class="mark">Correct answer' + (mine ? " · your answer" : "") + '</span>' : mine ? '<span class="mark">Your answer</span>' : "") + '</li>';
