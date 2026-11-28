@@ -148,8 +148,9 @@ for (const [certKey, tests] of Object.entries(DATA.mocks || {})) {
     if (!qs.length) errors.push(`${where}: no questions`);
     qs.forEach((q, i) => {
       const at = `${where} question ${i + 1}`;
-      if (!Array.isArray(q) || q.length !== 4) { errors.push(`${at}: must be [domain, question, options, explanation]`); return; }
-      const [domain, text, opts, why] = q;
+      if (!Array.isArray(q) || q.length < 4 || q.length > 5) { errors.push(`${at}: must be [domain, question, options, explanation, optional code lines]`); return; }
+      const [domain, text, opts, why, code] = q;
+      if (code !== undefined && (!Array.isArray(code) || !code.length || code.some((l) => typeof l !== "string"))) errors.push(`${at}: code must be a non-empty array of lines`);
       mockQuestions++;
       if (!cert.domains.some((d) => d.key === domain)) errors.push(`${at}: unknown domain "${domain}"`);
       perDomain[domain] = (perDomain[domain] || 0) + 1;

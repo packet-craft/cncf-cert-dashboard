@@ -90,7 +90,8 @@ a guide, that every checklist item is covered by a topic and that the Markdown i
 
 Each file in [`assets/js/mocks/`](assets/js/mocks/) holds the tests for one certification. A
 question is a `[domain key, question, [four options], explanation]` tuple, and **the first option
-is the correct answer** — the app shuffles the options and the question order on every attempt. A
+is the correct answer**. An optional fifth element, an array of lines, is shown under the question
+as a code block (for a manifest to read) — the app shuffles the options and the question order on every attempt. A
 test must have the number of questions per domain that the exam weights give for its size (for a
 60-question KCNA test: 26 / 17 / 10 / 7); the validator checks this. To add tests for another
 certification, create `assets/js/mocks/<cert>.js` and add its `<script>` tag to `index.html`.
