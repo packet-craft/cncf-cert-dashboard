@@ -53,6 +53,9 @@ for (const f of DATA.flashcards) {
   if (!TYPES.includes(f.type)) errors.push(`flashcard "${f.q}": bad type "${f.type}"`);
   if (DATA.certs[f.cert] && !DATA.certs[f.cert].domains.some((d) => d.key === f.d)) errors.push(`flashcard "${f.q}": d "${f.d}" is not a domain of ${f.cert}`);
   if (!f.q || !f.a) errors.push(`flashcard "${id}": missing question or answer`);
+  if (f.o !== undefined && (!Array.isArray(f.o) || f.o.length !== 4 || f.o.some((x) => !x || typeof x !== "string") || new Set(f.o).size !== 4)) {
+    errors.push(`flashcard "${f.q}": o must be four distinct options, the first being the correct one`);
+  }
   if (seen.has(id)) errors.push(`flashcard "${id}": duplicate`);
   seen.add(id);
 }

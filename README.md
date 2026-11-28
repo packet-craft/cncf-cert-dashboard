@@ -25,7 +25,7 @@ flashcards, so everything needed to prepare is in one place:
 - **Interactive checklists** — 128 study items, filterable by domain, priority, study week and free text. State is saved to `localStorage`.
 - **Exam readiness calculator** — a weighted score per certification, compared against the pass mark.
 - **CLI cheat sheet** — searchable, copy-to-clipboard commands for `kubectl`, `kubeadm`, `etcdctl`, `crictl` and security tooling (Trivy, kube-bench, kubescape, Cosign, Falco).
-- **Flashcards** — flip-animated cards for concepts, definitions and commands, with a filter by exam domain, shuffle, "mark as known" and keyboard shortcuts (`Space`, `←`, `→`, `K`).
+- **Flashcards** — exam-style cards for concepts, definitions and commands: pick one of four options and see the right answer with an explanation (cards without options reveal their answer on request), with a filter by exam domain, shuffle, "mark as known" and keyboard shortcuts (`←`, `→`, `K`).
 - **Mock tests** — timed practice in the exam format. KCNA has two tests of 60 questions each, split across the domains by exam weight, with a 90-minute countdown, question flagging, a score against the pass mark, a per-domain breakdown and an explained review of every answer. A test in progress survives a page reload.
 - **Resources** — curated free and open-source courses, repositories, labs and references for each certification.
 - Light and dark themes, mobile layout, progress export/import as JSON.
