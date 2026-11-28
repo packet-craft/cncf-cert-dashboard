@@ -744,7 +744,7 @@
         "Scheduling is based on **requests**, not on actual usage.",
         "The CPU and memory of a running pod can be changed without recreating it. This is called **in-place pod resize** and has been stable since v1.35.",
         "## Quality of Service classes",
-        "Kubernetes assigns each pod a QoS class from its requests and limits. When a node runs out of memory, pods are evicted in this order: BestEffort first, Guaranteed last.",
+        "Kubernetes assigns each pod a QoS class from its requests and limits. When a node runs out of memory, the kubelet evicts pods that use more than they requested first, taking pod priority into account. In practice BestEffort pods (which request nothing) are the most exposed and Guaranteed pods the least, but the order is not strictly by class.",
         "| Class | Condition |",
         "|---|---|",
         "| **Guaranteed** | Every container has CPU and memory requests equal to its limits |",
@@ -783,7 +783,7 @@
         ["What are the two phases of scheduling?", "Filtering, which removes nodes that cannot run the pod, and scoring, which ranks the remaining nodes to pick the best one."],
         ["A container exceeds its memory limit. What happens? And for CPU?", "For memory, the container is killed (OOMKilled) and restarted according to the restart policy. For CPU, it is throttled but keeps running."],
         ["Does a toleration make a pod run on the tainted node?", "No. It only permits it. The scheduler may still choose another node. Combine the toleration with node affinity or a node selector to require that node."],
-        ["Which QoS class does a pod get when it sets no requests and no limits, and why does it matter?", "BestEffort. These pods are the first to be evicted when a node is under resource pressure."],
+        ["Which QoS class does a pod get when it sets no requests and no limits, and why does it matter?", "BestEffort. These pods request nothing, so any usage is above their request and they are the most likely to be evicted when a node is under resource pressure."],
         ["Does the scheduler use requests or actual usage to decide whether a pod fits on a node?", "Requests. A node whose requests are fully allocated is full for scheduling purposes, even if actual usage is low."]
       ]
     }
