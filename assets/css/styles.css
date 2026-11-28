@@ -333,13 +333,13 @@ kbd { font: .8rem var(--mono); background: var(--surface-2); border: 1px solid v
   font: .86em var(--mono); background: var(--surface-2); border: 1px solid var(--border);
   border-radius: 5px; padding: 1px 5px; overflow-wrap: anywhere;
 }
-.prose pre {
+.prose pre, .mock-code {
   margin-bottom: 0; overflow-x: auto; background: var(--code-bg); color: var(--code-text);
   padding: 12px 14px; border-radius: 10px; font: .85rem/1.5 var(--mono);
 }
 .prose td code { overflow-wrap: normal; }
 .prose td:first-child code { white-space: nowrap; }
-.prose pre code { font: inherit; background: none; border: 0; padding: 0; overflow-wrap: normal; }
+.prose pre code, .mock-code code { font: inherit; background: none; border: 0; padding: 0; overflow-wrap: normal; }
 .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
 .prose table { border-collapse: collapse; width: 100%; font-size: .93rem; }
 .prose th, .prose td { text-align: left; vertical-align: top; padding: 9px 12px; border-top: 1px solid var(--border); }
@@ -394,6 +394,8 @@ legend.mock-text > .small { display: block; font-weight: 400; margin-bottom: 4px
 .mock-opt:hover { background: var(--surface-2); }
 .mock-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
 .mock-opt input, .mock-flag input { width: 18px; height: 18px; margin: 3px 0 0; flex: none; accent-color: var(--accent); }
+.mock-code { margin: 4px 0 6px; }
+.mock-review .mock-code { margin: 10px 0 0; }
 .mock-flag { display: inline-flex; gap: 10px; align-items: flex-start; margin-top: 14px; cursor: pointer; }
 .mock-flag input { margin-top: 1px; }
 .mock-nav { display: flex; gap: 10px; flex-wrap: wrap; }
