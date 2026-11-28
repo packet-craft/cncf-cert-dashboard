@@ -272,6 +272,9 @@ select, input[type="search"] {
 .fc-face .meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .fc-face .body { flex: 1; display: grid; place-content: center; font-size: 1.2rem; text-align: center; overflow-wrap: anywhere; padding: 8px 0; }
 .fc-back .body.command { font: .95rem/1.5 var(--mono); text-align: left; }
+.fc-domain { display: flex; align-items: center; gap: 8px; color: var(--muted); font-weight: 600; }
+.fc-domain select { max-width: 100%; }
+.fc-dom { flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fc-controls { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
 .fc-hint { text-align: center; margin-top: 10px; }
 kbd { font: .8rem var(--mono); background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; }

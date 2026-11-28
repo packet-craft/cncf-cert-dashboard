@@ -121,7 +121,7 @@
     filters: { domain: "all", priority: "all", week: "all", q: "", hideDone: false },
     doc: { domain: null, topic: null, q: "" },
     cheat: { tool: "all", q: "" },
-    fc: { type: "all", hideKnown: false, index: 0, flipped: false, order: null },
+    fc: { type: "all", domain: "all", hideKnown: false, index: 0, flipped: false, order: null },
     mock: { run: loadRun(), result: null, onlyWrong: false, hist: loadHist() }
   };
 
@@ -390,7 +390,7 @@
           '<span class="small muted">' + esc(t.summary) + '</span></button></li>';
       }).join("") + '</ol>' +
       '<p class="doc-actions"><button type="button" class="btn ghost" data-goto-domain="' + esc(d.key) + '">Open this domain’s checklist</button> ' +
-        '<button type="button" class="btn ghost" data-view="flashcards">Practise flashcards</button></p>';
+        '<button type="button" class="btn ghost" data-fc-open="' + esc(d.key) + '">Practise this domain’s flashcards</button></p>';
   }
   function topicPage(cert, d, t) {
     var flat = flatTopics(cert), idx = -1;
@@ -515,7 +515,8 @@
   function fcDeck() {
     var f = state.fc;
     var deck = DATA.flashcards.filter(function (c) {
-      return c.cert === state.cert && (f.type === "all" || c.type === f.type) && (!f.hideKnown || !state.known.has(fcId(c)));
+      return c.cert === state.cert && (f.domain === "all" || c.d === f.domain) && (f.type === "all" || c.type === f.type) &&
+        (!f.hideKnown || !state.known.has(fcId(c)));
     });
     if (f.order) {
       deck.sort(function (a, b) { return (f.order[fcId(a)] || 0) - (f.order[fcId(b)] || 0); });
@@ -523,14 +524,21 @@
     return deck;
   }
   function renderFlashcards(cert) {
-    var f = state.fc, deck = fcDeck();
-    var all = DATA.flashcards.filter(function (c) { return c.cert === state.cert; });
+    var f = state.fc;
+    if (f.domain !== "all" && !cert.domains.some(function (d) { return d.key === f.domain; })) f.domain = "all";
+    var deck = fcDeck();
+    var certCards = DATA.flashcards.filter(function (c) { return c.cert === state.cert; });
+    var all = certCards.filter(function (c) { return f.domain === "all" || c.d === f.domain; });
     var knownCount = all.filter(function (c) { return state.known.has(fcId(c)); }).length;
+    var domainOpts = [["all", "All domains (" + certCards.length + ")"]].concat(cert.domains.map(function (d) {
+      return [d.key, d.name + " (" + certCards.filter(function (c) { return c.d === d.key; }).length + ")"];
+    }));
     if (f.index >= deck.length) f.index = Math.max(0, deck.length - 1);
     var card = deck[f.index];
 
     var head = '<h2 class="sr-only">' + esc(cert.name) + ' flashcards</h2>' +
-      '<div class="fc-bar"><div class="chips" role="group" aria-label="Card type">' +
+      '<div class="fc-bar"><label class="fc-domain small">Domain<select data-fc-domain>' + options(domainOpts, f.domain) + '</select></label>' +
+      '<div class="chips" role="group" aria-label="Card type">' +
       ["all", "concept", "definition", "command"].map(function (t) {
         return '<button class="chip" type="button" data-fc-type="' + t + '" aria-pressed="' + (t === f.type) + '">' + cap(t) + '</button>';
       }).join("") + '</div>' +
@@ -547,7 +555,7 @@
       '<button class="flashcard' + (f.flipped ? " flipped" : "") + '" type="button" id="flashcard">' +
         '<span class="fc-inner">' +
           '<span class="fc-face fc-front" aria-hidden="' + f.flipped + '"><span class="meta"><span class="badge accent">' + cap(card.type) + '</span>' +
-            knownBadge + '<span class="small muted num">Card ' + (f.index + 1) + ' of ' + deck.length + '</span></span>' +
+            '<span class="small muted fc-dom">' + esc(domainName(cert, card.d)) + '</span>' + knownBadge + '<span class="small muted num">Card ' + (f.index + 1) + ' of ' + deck.length + '</span></span>' +
             '<span class="body">' + esc(card.q) + '</span><span class="small muted">Question — select to flip</span></span>' +
           '<span class="fc-face fc-back" aria-hidden="' + !f.flipped + '"><span class="meta"><span class="badge accent">Answer</span>' +
             knownBadge + '</span>' +
@@ -859,7 +867,7 @@
 
     if (d.cert) {
       if (!own(DATA.certs, d.cert)) return;
-      state.cert = d.cert; resetFilters(); state.doc = { domain: null, topic: null, q: "" }; state.fc.index = 0; state.fc.flipped = false; state.fc.order = null;
+      state.cert = d.cert; resetFilters(); state.doc = { domain: null, topic: null, q: "" }; state.fc.index = 0; state.fc.flipped = false; state.fc.order = null; state.fc.domain = "all";
       saveUi(); render(); window.scrollTo(0, 0);
     } else if (d.view) {
       state.view = d.view; saveUi(); render(); window.scrollTo(0, 0);
@@ -878,6 +886,9 @@
         function () { toast("Copied to clipboard"); },
         function () { toast("Copy failed — select the text manually"); }
       );
+    } else if (d.fcOpen) {
+      state.view = "flashcards"; state.fc.domain = d.fcOpen; state.fc.type = "all"; state.fc.index = 0; state.fc.flipped = false;
+      saveUi(); render(); window.scrollTo(0, 0);
     } else if (d.fcType) {
       state.fc.type = d.fcType; state.fc.index = 0; state.fc.flipped = false; render();
     } else if (d.fcNav) {
@@ -968,6 +979,8 @@
       return;
     } else if ("mockWrong" in d) {
       state.mock.onlyWrong = t.checked; render();
+    } else if ("fcDomain" in d) {
+      state.fc.domain = t.value; state.fc.index = 0; state.fc.flipped = false; render();
     } else if ("fcHide" in d) {
       state.fc.hideKnown = t.checked; state.fc.index = 0; state.fc.flipped = false; render();
     } else if (t.id === "importInput") {

@@ -51,6 +51,7 @@ for (const f of DATA.flashcards) {
   const id = `${f.cert}:${f.q}`;
   if (!DATA.certs[f.cert]) errors.push(`flashcard "${f.q}": unknown cert "${f.cert}"`);
   if (!TYPES.includes(f.type)) errors.push(`flashcard "${f.q}": bad type "${f.type}"`);
+  if (DATA.certs[f.cert] && !DATA.certs[f.cert].domains.some((d) => d.key === f.d)) errors.push(`flashcard "${f.q}": d "${f.d}" is not a domain of ${f.cert}`);
   if (!f.q || !f.a) errors.push(`flashcard "${id}": missing question or answer`);
   if (seen.has(id)) errors.push(`flashcard "${id}": duplicate`);
   seen.add(id);
